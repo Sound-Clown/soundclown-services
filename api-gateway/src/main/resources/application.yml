@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: false
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+
+        - id: song-service
+          uri: ${SONG_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/songs/**,/api/albums/**
+
+        - id: user-service
+          uri: ${USER_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/users/**
+
+        - id: media-service
+          uri: ${MEDIA_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/upload/**
+
+        - id: search-service
+          uri: ${SEARCH_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/search/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
