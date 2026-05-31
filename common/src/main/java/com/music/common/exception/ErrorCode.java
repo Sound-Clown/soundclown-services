@@ -12,6 +12,7 @@ public enum ErrorCode {
     AUTH_TOKEN_EXPIRED(1004, "Token hết hạn", HttpStatus.UNAUTHORIZED),
     AUTH_TOKEN_INVALID(1005, "Invalid token", HttpStatus.UNAUTHORIZED),
     AUTH_UNAUTHORIZED(1006, "Chưa xác thực", HttpStatus.UNAUTHORIZED),
+    AUTH_FORBIDDEN(1007, "Không đủ quyền truy cập", HttpStatus.FORBIDDEN),
     AUTH_USERNAME_INVALID(1010, "Username phải từ 3-50 ký tự", HttpStatus.BAD_REQUEST),
     AUTH_EMAIL_INVALID(1011, "Email không hợp lệ", HttpStatus.BAD_REQUEST),
     AUTH_PASSWORD_INVALID(1012, "Mật khẩu phải có ít nhất 6 ký tự", HttpStatus.BAD_REQUEST),
@@ -29,9 +30,13 @@ public enum ErrorCode {
     SONG_NOT_FOUND(1301, "Không tìm thấy bài hát", HttpStatus.NOT_FOUND),
     SONG_NOT_OWNED(1303, "Bạn không có quyền thao tác bài hát này", HttpStatus.FORBIDDEN),
     SONG_NOT_APPROVED(1304, "Bài hát chưa được duyệt", HttpStatus.FORBIDDEN),
+    SONG_TITLE_BLANK(1310, "Tên bài hát không được để trống", HttpStatus.BAD_REQUEST),
+    SONG_AUDIO_REQUIRED(1311, "File audio là bắt buộc", HttpStatus.BAD_REQUEST),
 
     // Album 1401-1500
     ALBUM_NOT_FOUND(1401, "Không tìm thấy album", HttpStatus.NOT_FOUND),
+    ALBUM_NOT_OWNED(1402, "Bạn không có quyền thao tác album này", HttpStatus.FORBIDDEN),
+    ALBUM_NAME_BLANK(1410, "Tên album không được để trống", HttpStatus.BAD_REQUEST),
 
     // Media 1601-1700
     INVALID_FILE_TYPE(1601, "Định dạng file không hợp lệ", HttpStatus.BAD_REQUEST),

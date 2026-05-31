@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleDenied(AuthorizationDeniedException ex) {
-        return build(ErrorCode.AUTH_UNAUTHORIZED);
+        return build(ErrorCode.AUTH_FORBIDDEN);
     }
 
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})

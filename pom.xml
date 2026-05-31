@@ -29,8 +29,8 @@
         <module>auth-service</module>
         <module>api-gateway</module>
         <module>media-service</module>
-        <!-- Bỏ comment khi tạo từng service (Lộ trình implement — backend-design.md §13):
         <module>song-service</module>
+        <!-- Bỏ comment khi tạo từng service (Lộ trình implement — backend-design.md §13):
         <module>user-service</module>
         <module>search-service</module>
         <module>notification-service</module>

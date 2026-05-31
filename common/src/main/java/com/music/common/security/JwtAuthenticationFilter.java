@@ -31,10 +31,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 Claims claims = jwtUtil.extractAllClaims(header.substring(7));
                 Long userId = Long.valueOf(claims.getSubject());
-                String role = claims.get("role", String.class);
+                String username = claims.get("username", String.class);
+                Role role = Role.valueOf(claims.get("role", String.class));
 
+                AuthPrincipal principal = new AuthPrincipal(userId, username, role);
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                        principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException | IllegalArgumentException ex) {
                 SecurityContextHolder.clearContext();

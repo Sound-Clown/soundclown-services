@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.function.Function;
 
 @Getter
 @Builder
@@ -17,8 +18,12 @@ public class PageResponse<T> {
     private int totalPages;
 
     public static <T> PageResponse<T> of(Page<T> page) {
+        return of(page, Function.identity());
+    }
+
+    public static <S, T> PageResponse<T> of(Page<S> page, Function<? super S, ? extends T> mapper) {
         return PageResponse.<T>builder()
-                .content(page.getContent())
+                .content(page.getContent().stream().map(mapper).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)))
                 .page(page.getNumber() + 1)
                 .size(page.getSize())
                 .totalElements(page.getTotalElements())
