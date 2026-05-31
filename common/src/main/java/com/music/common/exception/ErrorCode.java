@@ -36,6 +36,7 @@ public enum ErrorCode {
     // Media 1601-1700
     INVALID_FILE_TYPE(1601, "Định dạng file không hợp lệ", HttpStatus.BAD_REQUEST),
     FILE_TOO_LARGE(1602, "File quá dung lượng cho phép", HttpStatus.BAD_REQUEST),
+    UPLOAD_FAILED(1603, "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Validation / request 1900-1999
     VALIDATION_ERROR(1900, "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
