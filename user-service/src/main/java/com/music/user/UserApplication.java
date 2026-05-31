@@ -1,16 +1,14 @@
-package com.music.auth;
+package com.music.user;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-// scanBasePackages = "com.music" so shared beans in common/ (GlobalExceptionHandler,
-// CurrentUserProvider, JwtUtil) are component-scanned alongside this service.
 @SpringBootApplication(scanBasePackages = "com.music")
 @EnableFeignClients
-public class AuthApplication {
+public class UserApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(AuthApplication.class, args);
+        SpringApplication.run(UserApplication.class, args);
     }
 }

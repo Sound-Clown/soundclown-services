@@ -5,6 +5,8 @@ import com.music.auth.dto.request.ForgotPasswordRequest;
 import com.music.auth.dto.request.LoginRequest;
 import com.music.auth.dto.request.RegisterRequest;
 import com.music.auth.dto.request.ResetPasswordRequest;
+import com.music.auth.client.UserProfileSyncRequest;
+import com.music.auth.client.UserSyncClient;
 import com.music.auth.dto.response.AuthResponse;
 import com.music.auth.dto.response.UserInfoDto;
 import com.music.auth.entity.PasswordResetToken;
@@ -40,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final CurrentUserProvider currentUserProvider;
     private final UserMapper userMapper;
+    private final UserSyncClient userSyncClient;
 
     @Value("${password-reset.token-ttl-minutes:30}")
     private long resetTokenTtlMinutes;
@@ -65,8 +68,16 @@ public class AuthServiceImpl implements AuthService {
                 .active(true)
                 .build();
         userRepository.save(user);
+        syncProfile(user);
 
         return buildAuthResponse(user);
+    }
+
+    @Override
+    public void setActive(Long id, boolean active) {
+        User user = loadUser(id);
+        user.setActive(active);
+        userRepository.save(user);
     }
 
     @Override
@@ -145,6 +156,22 @@ public class AuthServiceImpl implements AuthService {
     private User loadUser(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    // Best-effort mirror to user-service. Registration must not fail if user-service is down;
+    // the profile can be re-synced later (an event bus would make this reliable — Phase 3).
+    private void syncProfile(User user) {
+        try {
+            userSyncClient.upsert(UserProfileSyncRequest.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .role(user.getRole())
+                    .active(user.isActive())
+                    .build());
+        } catch (Exception ex) {
+            log.warn("Failed to sync profile to user-service for userId={}", user.getId(), ex);
+        }
     }
 
     private AuthResponse buildAuthResponse(User user) {

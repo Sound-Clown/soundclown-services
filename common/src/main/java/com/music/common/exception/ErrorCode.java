@@ -25,6 +25,7 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(1205, "Email đã được sử dụng", HttpStatus.CONFLICT),
     DUPLICATE_USERNAME(1206, "Username đã được sử dụng", HttpStatus.CONFLICT),
     CANNOT_LOCK_SELF(1207, "Không thể tự khóa tài khoản của mình", HttpStatus.BAD_REQUEST),
+    USER_LOCK_SYNC_FAILED(1210, "Không thể đồng bộ trạng thái tài khoản với auth-service", HttpStatus.BAD_GATEWAY),
 
     // Song 1301-1400
     SONG_NOT_FOUND(1301, "Không tìm thấy bài hát", HttpStatus.NOT_FOUND),

@@ -18,6 +18,8 @@ public interface AuthService {
 
     UserInfoDto getUserById(Long id);
 
+    void setActive(Long id, boolean active);
+
     void changePassword(ChangePasswordRequest request);
 
     void forgotPassword(ForgotPasswordRequest request);

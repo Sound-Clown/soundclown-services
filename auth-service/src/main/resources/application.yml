@@ -18,5 +18,8 @@ jwt:
   secret: ${JWT_SECRET:dev-secret-change-me-please-min-32-characters-long}
   expiry-days: ${JWT_EXPIRY_DAYS:7}
 
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8083}
+
 password-reset:
   token-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:30}
