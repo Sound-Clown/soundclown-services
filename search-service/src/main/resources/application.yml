@@ -1,0 +1,11 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: search-service
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-me-please-min-32-characters-long}

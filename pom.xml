@@ -31,8 +31,8 @@
         <module>media-service</module>
         <module>song-service</module>
         <module>user-service</module>
-        <!-- Bỏ comment khi tạo từng service (Lộ trình implement — backend-design.md §13):
         <module>search-service</module>
+        <!-- Bỏ comment khi tạo từng service (Lộ trình implement — backend-design.md §13):
         <module>notification-service</module>
         -->
     </modules>

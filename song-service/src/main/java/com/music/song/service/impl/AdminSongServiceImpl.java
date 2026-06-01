@@ -11,6 +11,7 @@ import com.music.song.repository.SongRepository;
 import com.music.song.service.AdminSongService;
 import com.music.song.service.Pageables;
 import com.music.song.service.SongResponseAssembler;
+import com.music.song.service.SongSearchIndexer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class AdminSongServiceImpl implements AdminSongService {
 
     private final SongRepository songRepository;
     private final SongResponseAssembler assembler;
+    private final SongSearchIndexer searchIndexer;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,13 +41,14 @@ public class AdminSongServiceImpl implements AdminSongService {
         if (Boolean.TRUE.equals(request.getApproved())) {
             song.setStatus(SongStatus.APPROVED);
             song.setRejectReason(null);
+            songRepository.save(song);
+            searchIndexer.index(song);
         } else {
             song.setStatus(SongStatus.REJECTED);
             song.setRejectReason(request.getRejectReason());
+            songRepository.save(song);
+            searchIndexer.delete(song.getId());
         }
-        songRepository.save(song);
-
-        // TODO(search-service): index/refresh this song in Elasticsearch on approval (Phase 2).
         return assembler.toResponse(song);
     }
 }

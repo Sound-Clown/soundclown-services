@@ -21,6 +21,7 @@ import com.music.song.repository.LikeRepository;
 import com.music.song.repository.SongRepository;
 import com.music.song.service.Pageables;
 import com.music.song.service.SongResponseAssembler;
+import com.music.song.service.SongSearchIndexer;
 import com.music.song.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +38,7 @@ public class SongServiceImpl implements SongService {
     private final LikeRepository likeRepository;
     private final SongResponseAssembler assembler;
     private final CurrentUserProvider currentUserProvider;
+    private final SongSearchIndexer searchIndexer;
 
     @Override
     @Transactional(readOnly = true)
@@ -114,6 +116,9 @@ public class SongServiceImpl implements SongService {
             song.setAlbumId(request.getAlbumId());
         }
         songRepository.save(song);
+        if (song.getStatus() == SongStatus.APPROVED) {
+            searchIndexer.index(song);
+        }
         return assembler.toResponse(song);
     }
 
@@ -123,6 +128,7 @@ public class SongServiceImpl implements SongService {
         ensureOwnsSong(song);
         likeRepository.deleteBySongId(id);
         songRepository.delete(song);
+        searchIndexer.delete(id);
     }
 
     @Override

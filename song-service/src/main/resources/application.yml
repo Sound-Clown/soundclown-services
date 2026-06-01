@@ -16,3 +16,6 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:dev-secret-change-me-please-min-32-characters-long}
+
+search-service:
+  url: ${SEARCH_SERVICE_URL:http://localhost:8084}
