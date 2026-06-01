@@ -37,10 +37,8 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil),
                         UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) ->
-                                writeError(res, ErrorCode.AUTH_UNAUTHORIZED))
-                        .accessDeniedHandler((req, res, e) ->
-                                writeError(res, ErrorCode.AUTH_UNAUTHORIZED)));
+                        .authenticationEntryPoint((req, res, e) -> writeError(res, ErrorCode.AUTH_UNAUTHORIZED))
+                        .accessDeniedHandler((req, res, e) -> writeError(res, ErrorCode.AUTH_UNAUTHORIZED)));
         return http.build();
     }
 

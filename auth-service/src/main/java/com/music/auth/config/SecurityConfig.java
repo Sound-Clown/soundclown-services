@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, POST_PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/internal/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil),
                         UsernamePasswordAuthenticationFilter.class)
