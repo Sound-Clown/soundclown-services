@@ -1,0 +1,175 @@
+# Run the whole SoundClown system:  docker compose up --build
+# First build is slow (each service compiles the reactor); subsequent runs are cached.
+name: soundclown
+
+x-jwt-secret: &jwt-secret ${JWT_SECRET:-dev-secret-change-me-please-min-32-characters-long}
+x-db-password: &db-password ${DB_PASSWORD:-root}
+
+services:
+
+  # ---------- Edge ----------
+  api-gateway:
+    build:
+      context: .
+      args: { MODULE: api-gateway }
+    ports: ["8080:8080"]
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      SONG_SERVICE_URL: http://song-service:8082
+      USER_SERVICE_URL: http://user-service:8083
+      MEDIA_SERVICE_URL: http://media-service:8085
+      SEARCH_SERVICE_URL: http://search-service:8084
+      REDIS_HOST: redis
+    depends_on:
+      redis: { condition: service_healthy }
+
+  # ---------- Services ----------
+  auth-service:
+    build:
+      context: .
+      args: { MODULE: auth-service }
+    ports: ["8081:8081"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://auth-db:3306/auth_db?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: *db-password
+      JWT_SECRET: *jwt-secret
+      REDIS_HOST: redis
+      USER_SERVICE_URL: http://user-service:8083
+    depends_on:
+      auth-db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  song-service:
+    build:
+      context: .
+      args: { MODULE: song-service }
+    ports: ["8082:8082"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://song-db:3306/song_db?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: *db-password
+      JWT_SECRET: *jwt-secret
+      SEARCH_SERVICE_URL: http://search-service:8084
+    depends_on:
+      song-db: { condition: service_healthy }
+
+  user-service:
+    build:
+      context: .
+      args: { MODULE: user-service }
+    ports: ["8083:8083"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: *db-password
+      JWT_SECRET: *jwt-secret
+      AUTH_SERVICE_URL: http://auth-service:8081
+    depends_on:
+      user-db: { condition: service_healthy }
+
+  media-service:
+    build:
+      context: .
+      args: { MODULE: media-service }
+    ports: ["8085:8085"]
+    environment:
+      JWT_SECRET: *jwt-secret
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-demo}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-000000000000000}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-dummy-secret}
+
+  search-service:
+    build:
+      context: .
+      args: { MODULE: search-service }
+    ports: ["8084:8084"]
+    environment:
+      ELASTICSEARCH_URIS: http://elasticsearch:9200
+      JWT_SECRET: *jwt-secret
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+
+  notification-service:
+    build:
+      context: .
+      args: { MODULE: notification-service }
+    ports: ["8086:8086"]
+    environment:
+      REDIS_HOST: redis
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+    depends_on:
+      redis: { condition: service_healthy }
+
+  # ---------- Databases (one per service) ----------
+  auth-db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: auth_db
+      MYSQL_ROOT_PASSWORD: *db-password
+    volumes: ["auth-db-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  song-db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: song_db
+      MYSQL_ROOT_PASSWORD: *db-password
+    volumes: ["song-db-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  user-db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: user_db
+      MYSQL_ROOT_PASSWORD: *db-password
+    volumes: ["user-db-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # ---------- Infrastructure ----------
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports: ["9200:9200"]
+    volumes: ["es-data:/usr/share/elasticsearch/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  # Dev SMTP catcher — open http://localhost:8025 to read reset-password emails.
+  mailhog:
+    image: mailhog/mailhog
+    ports: ["1025:1025", "8025:8025"]
+
+volumes:
+  auth-db-data:
+  song-db-data:
+  user-db-data:
+  es-data:
