@@ -11,6 +11,7 @@ import com.music.auth.dto.response.AuthResponse;
 import com.music.auth.dto.response.UserInfoDto;
 import com.music.auth.entity.PasswordResetToken;
 import com.music.auth.entity.User;
+import com.music.auth.event.ResetEmailPublisher;
 import com.music.auth.mapper.UserMapper;
 import com.music.auth.repository.PasswordResetTokenRepository;
 import com.music.auth.repository.UserRepository;
@@ -43,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final CurrentUserProvider currentUserProvider;
     private final UserMapper userMapper;
     private final UserSyncClient userSyncClient;
+    private final ResetEmailPublisher resetEmailPublisher;
 
     @Value("${password-reset.token-ttl-minutes:30}")
     private long resetTokenTtlMinutes;
@@ -132,9 +134,8 @@ public class AuthServiceImpl implements AuthService {
                     .build();
             passwordResetTokenRepository.save(resetToken);
 
-            // TODO(notification-service): publish event để gửi email. Tạm log token ở môi
-            // trường dev.
-            log.info("Password reset token for userId={}: {}", user.getId(), resetToken.getToken());
+            // Hand off to notification-service asynchronously via Redis Pub/Sub.
+            resetEmailPublisher.publish(user.getEmail(), resetToken.getToken());
         });
     }
 

@@ -13,6 +13,10 @@ spring:
       ddl-auto: update
     open-in-view: false
     show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 jwt:
   secret: ${JWT_SECRET:dev-secret-change-me-please-min-32-characters-long}
