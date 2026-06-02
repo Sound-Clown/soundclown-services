@@ -41,6 +41,14 @@
             <artifactId>spring-tx</artifactId>
         </dependency>
 
+        <!-- Non-optional: OpenApiConfig (component-scanned in every service) references
+             springdoc/swagger types, and every servlet service should expose /v3/api-docs
+             and /swagger-ui automatically. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>

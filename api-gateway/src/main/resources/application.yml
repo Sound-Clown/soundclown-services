@@ -51,6 +51,53 @@ spring:
           predicates:
             - Path=/api/search/**
 
+        # Aggregate each service's OpenAPI spec under the gateway's Swagger UI.
+        - id: auth-docs
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/v3/api-docs/auth
+          filters:
+            - RewritePath=/v3/api-docs/auth, /v3/api-docs
+        - id: song-docs
+          uri: ${SONG_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/v3/api-docs/song
+          filters:
+            - RewritePath=/v3/api-docs/song, /v3/api-docs
+        - id: user-docs
+          uri: ${USER_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/v3/api-docs/user
+          filters:
+            - RewritePath=/v3/api-docs/user, /v3/api-docs
+        - id: media-docs
+          uri: ${MEDIA_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/v3/api-docs/media
+          filters:
+            - RewritePath=/v3/api-docs/media, /v3/api-docs
+        - id: search-docs
+          uri: ${SEARCH_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/v3/api-docs/search
+          filters:
+            - RewritePath=/v3/api-docs/search, /v3/api-docs
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth
+      - name: song-service
+        url: /v3/api-docs/song
+      - name: user-service
+        url: /v3/api-docs/user
+      - name: media-service
+        url: /v3/api-docs/media
+      - name: search-service
+        url: /v3/api-docs/search
+
 management:
   endpoints:
     web:
