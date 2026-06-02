@@ -12,7 +12,7 @@ services:
     build:
       context: .
       args: { MODULE: api-gateway }
-    ports: ["8080:8080"]
+    ports: [ "8080:8080" ]
     environment:
       AUTH_SERVICE_URL: http://auth-service:8081
       SONG_SERVICE_URL: http://song-service:8082
@@ -28,7 +28,7 @@ services:
     build:
       context: .
       args: { MODULE: auth-service }
-    ports: ["8081:8081"]
+    ports: [ "8081:8081" ]
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://auth-db:3306/auth_db?serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
@@ -44,7 +44,7 @@ services:
     build:
       context: .
       args: { MODULE: song-service }
-    ports: ["8082:8082"]
+    ports: [ "8082:8082" ]
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://song-db:3306/song_db?serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
@@ -58,7 +58,7 @@ services:
     build:
       context: .
       args: { MODULE: user-service }
-    ports: ["8083:8083"]
+    ports: [ "8083:8083" ]
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
@@ -72,7 +72,7 @@ services:
     build:
       context: .
       args: { MODULE: media-service }
-    ports: ["8085:8085"]
+    ports: [ "8085:8085" ]
     environment:
       JWT_SECRET: *jwt-secret
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-demo}
@@ -83,7 +83,7 @@ services:
     build:
       context: .
       args: { MODULE: search-service }
-    ports: ["8084:8084"]
+    ports: [ "8084:8084" ]
     environment:
       ELASTICSEARCH_URIS: http://elasticsearch:9200
       JWT_SECRET: *jwt-secret
@@ -94,7 +94,7 @@ services:
     build:
       context: .
       args: { MODULE: notification-service }
-    ports: ["8086:8086"]
+    ports: [ "8086:8086" ]
     environment:
       REDIS_HOST: redis
       SMTP_HOST: mailhog
@@ -108,9 +108,9 @@ services:
     environment:
       MYSQL_DATABASE: auth_db
       MYSQL_ROOT_PASSWORD: *db-password
-    volumes: ["auth-db-data:/var/lib/mysql"]
+    volumes: [ "auth-db-data:/var/lib/mysql" ]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -120,9 +120,9 @@ services:
     environment:
       MYSQL_DATABASE: song_db
       MYSQL_ROOT_PASSWORD: *db-password
-    volumes: ["song-db-data:/var/lib/mysql"]
+    volumes: [ "song-db-data:/var/lib/mysql" ]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -132,9 +132,9 @@ services:
     environment:
       MYSQL_DATABASE: user_db
       MYSQL_ROOT_PASSWORD: *db-password
-    volumes: ["user-db-data:/var/lib/mysql"]
+    volumes: [ "user-db-data:/var/lib/mysql" ]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -142,9 +142,9 @@ services:
   # ---------- Infrastructure ----------
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports: [ "6379:6379" ]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -155,10 +155,10 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    ports: ["9200:9200"]
-    volumes: ["es-data:/usr/share/elasticsearch/data"]
+    ports: [ "9200:9200" ]
+    volumes: [ "es-data:/usr/share/elasticsearch/data" ]
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -166,7 +166,7 @@ services:
   # Dev SMTP catcher — open http://localhost:8025 to read reset-password emails.
   mailhog:
     image: mailhog/mailhog
-    ports: ["1025:1025", "8025:8025"]
+    ports: [ "1025:1025", "8025:8025" ]
 
 volumes:
   auth-db-data:
