@@ -5,6 +5,13 @@ name: soundclown
 x-jwt-secret: &jwt-secret ${JWT_SECRET:-dev-secret-change-me-please-min-32-characters-long}
 x-db-password: &db-password ${DB_PASSWORD:-root}
 
+# Observability config merged into every app service (YAML merge key <<).
+# Exposes Prometheus metrics and ships 100% of traces to Zipkin.
+x-observability: &observability
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+
 services:
 
   # ---------- Edge ----------
@@ -14,6 +21,7 @@ services:
       args: { MODULE: api-gateway }
     ports: [ "8080:8080" ]
     environment:
+      <<: *observability
       AUTH_SERVICE_URL: http://auth-service:8081
       SONG_SERVICE_URL: http://song-service:8082
       USER_SERVICE_URL: http://user-service:8083
@@ -30,6 +38,7 @@ services:
       args: { MODULE: auth-service }
     ports: [ "8081:8081" ]
     environment:
+      <<: *observability
       SPRING_DATASOURCE_URL: jdbc:mysql://auth-db:3306/auth_db?serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: *db-password
@@ -46,6 +55,7 @@ services:
       args: { MODULE: song-service }
     ports: [ "8082:8082" ]
     environment:
+      <<: *observability
       SPRING_DATASOURCE_URL: jdbc:mysql://song-db:3306/song_db?serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: *db-password
@@ -60,6 +70,7 @@ services:
       args: { MODULE: user-service }
     ports: [ "8083:8083" ]
     environment:
+      <<: *observability
       SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: *db-password
@@ -74,6 +85,7 @@ services:
       args: { MODULE: media-service }
     ports: [ "8085:8085" ]
     environment:
+      <<: *observability
       JWT_SECRET: *jwt-secret
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-demo}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-000000000000000}
@@ -85,6 +97,7 @@ services:
       args: { MODULE: search-service }
     ports: [ "8084:8084" ]
     environment:
+      <<: *observability
       ELASTICSEARCH_URIS: http://elasticsearch:9200
       JWT_SECRET: *jwt-secret
     depends_on:
@@ -96,6 +109,7 @@ services:
       args: { MODULE: notification-service }
     ports: [ "8086:8086" ]
     environment:
+      <<: *observability
       REDIS_HOST: redis
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
@@ -168,8 +182,35 @@ services:
     image: mailhog/mailhog
     ports: [ "1025:1025", "8025:8025" ]
 
+  # ---------- Observability ----------
+  # Distributed tracing — open http://localhost:9411 to follow a request across services.
+  zipkin:
+    image: openzipkin/zipkin:3
+    ports: [ "9411:9411" ]
+
+  # Metrics scraper — scrapes each service's /actuator/prometheus (see monitoring/prometheus.yml).
+  prometheus:
+    image: prom/prometheus:latest
+    ports: [ "9090:9090" ]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  # Dashboards — open http://localhost:3001 (admin/admin), Prometheus datasource pre-wired.
+  grafana:
+    image: grafana/grafana:latest
+    ports: [ "3001:3000" ]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on: [ prometheus ]
+
 volumes:
   auth-db-data:
   song-db-data:
   user-db-data:
   es-data:
+  grafana-data:
