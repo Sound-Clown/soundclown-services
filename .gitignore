@@ -35,3 +35,7 @@ build/
 
 ### document ###
 /.docs
+
+### env ###
+.env
+!.env.example
