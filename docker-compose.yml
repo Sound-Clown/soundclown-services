@@ -157,6 +157,7 @@ services:
   redis:
     image: redis:7-alpine
     ports: [ "6379:6379" ]
+    volumes: [ "redis-data:/data" ]
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -194,6 +195,7 @@ services:
     ports: [ "9090:9090" ]
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
 
   # Dashboards — open http://localhost:3001 (admin/admin), Prometheus datasource pre-wired.
   grafana:
@@ -208,9 +210,22 @@ services:
       - grafana-data:/var/lib/grafana
     depends_on: [ prometheus ]
 
+networks:
+  default:
+    name: soundclown-network
+
 volumes:
   auth-db-data:
+    name: soundclown-auth-db-data
   song-db-data:
+    name: soundclown-song-db-data
   user-db-data:
+    name: soundclown-user-db-data
   es-data:
+    name: soundclown-es-data
+  redis-data:
+    name: soundclown-redis-data
+  prometheus-data:
+    name: soundclown-prometheus-data
   grafana-data:
+    name: soundclown-grafana-data
