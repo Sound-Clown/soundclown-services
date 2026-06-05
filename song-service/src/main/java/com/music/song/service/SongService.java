@@ -9,7 +9,7 @@ import com.music.song.dto.response.StatsResponse;
 
 public interface SongService {
 
-    PageResponse<SongResponse> getApprovedSongs(int page, int size, String sortBy, String sortDir);
+    PageResponse<SongResponse> getApprovedSongs(int page, int size, String sortBy, String sortDir, String artist);
 
     SongResponse getSongById(Long id);
 

@@ -38,9 +38,10 @@ public class SongController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String artist) {
         return ApiResponse.<PageResponse<SongResponse>>builder()
-                .result(songService.getApprovedSongs(page, size, sortBy, sortDir))
+                .result(songService.getApprovedSongs(page, size, sortBy, sortDir, artist))
                 .build();
     }
 

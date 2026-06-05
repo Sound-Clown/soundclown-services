@@ -44,6 +44,16 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResponse<AlbumResponse> listAlbums(String artist, int page, int size, String sortBy, String sortDir) {
+        Pageable pageable = Pageables.of(page, size, sortBy, sortDir);
+        var albums = (artist == null || artist.isBlank())
+                ? albumRepository.findAll(pageable)
+                : albumRepository.findByArtistUsername(artist, pageable);
+        return PageResponse.of(albums, albumMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public AlbumDetailResponse getAlbumDetail(Long id) {
         Album album = albumRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ALBUM_NOT_FOUND));

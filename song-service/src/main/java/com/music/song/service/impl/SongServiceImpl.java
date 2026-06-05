@@ -24,6 +24,7 @@ import com.music.song.service.SongResponseAssembler;
 import com.music.song.service.SongSearchIndexer;
 import com.music.song.service.SongService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,9 +43,12 @@ public class SongServiceImpl implements SongService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<SongResponse> getApprovedSongs(int page, int size, String sortBy, String sortDir) {
+    public PageResponse<SongResponse> getApprovedSongs(int page, int size, String sortBy, String sortDir, String artist) {
         Pageable pageable = Pageables.of(page, size, sortBy, sortDir);
-        return assembler.toPageResponse(songRepository.findByStatus(SongStatus.APPROVED, pageable));
+        Page<Song> songs = (artist == null || artist.isBlank())
+                ? songRepository.findByStatus(SongStatus.APPROVED, pageable)
+                : songRepository.findByStatusAndArtistUsername(SongStatus.APPROVED, artist, pageable);
+        return assembler.toPageResponse(songs);
     }
 
     @Override

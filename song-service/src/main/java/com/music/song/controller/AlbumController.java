@@ -30,6 +30,20 @@ public class AlbumController {
 
     private final AlbumService albumService;
 
+    // Public: list albums, optionally filtered by artist name (for the artist page).
+    @GetMapping
+    @PreAuthorize("permitAll()")
+    public ApiResponse<PageResponse<AlbumResponse>> listAlbums(
+            @RequestParam(required = false) String artist,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        return ApiResponse.<PageResponse<AlbumResponse>>builder()
+                .result(albumService.listAlbums(artist, page, size, sortBy, sortDir))
+                .build();
+    }
+
     // Public: listener xem chi tiết 1 album kèm danh sách bài APPROVED (để phát).
     @GetMapping("/{id}")
     @PreAuthorize("permitAll()")

@@ -10,6 +10,8 @@ public interface AlbumService {
 
     PageResponse<AlbumResponse> getMyAlbums(int page, int size, String sortBy, String sortDir);
 
+    PageResponse<AlbumResponse> listAlbums(String artist, int page, int size, String sortBy, String sortDir);
+
     AlbumDetailResponse getAlbumDetail(Long id);
 
     AlbumResponse createAlbum(CreateAlbumRequest request);
