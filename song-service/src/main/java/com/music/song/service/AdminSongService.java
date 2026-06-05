@@ -9,4 +9,6 @@ public interface AdminSongService {
     PageResponse<SongResponse> getPendingSongs(int page, int size, String sortBy, String sortDir);
 
     SongResponse reviewSong(Long id, ReviewSongRequest request);
+
+    long reindexApprovedSongs();
 }

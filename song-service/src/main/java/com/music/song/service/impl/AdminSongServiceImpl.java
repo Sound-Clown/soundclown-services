@@ -13,10 +13,14 @@ import com.music.song.service.Pageables;
 import com.music.song.service.SongResponseAssembler;
 import com.music.song.service.SongSearchIndexer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -50,5 +54,14 @@ public class AdminSongServiceImpl implements AdminSongService {
             searchIndexer.delete(song.getId());
         }
         return assembler.toResponse(song);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long reindexApprovedSongs() {
+        List<Song> approved = songRepository.findByStatus(SongStatus.APPROVED);
+        approved.forEach(searchIndexer::index);
+        log.info("Reindexed {} approved songs into search-service", approved.size());
+        return approved.size();
     }
 }

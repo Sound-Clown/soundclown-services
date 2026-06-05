@@ -51,9 +51,14 @@ docker compose up --build      # Flyway runs V1 then V2 on a fresh song_db
 
 - **Re-generating after V2 is already applied** changes the file's checksum → Flyway will refuse.
   For a dev reset, drop the DB (`docker compose down -v`) and bring it up again.
-- **Full-text search** indexes songs when an admin approves them (via Feign). Seeded songs are
-  inserted straight into `song_db`, so they are **not in Elasticsearch** until reindexed —
-  browsing/album/detail/play/like all work, but `/api/search` won't find them yet.
-  (Follow-up: add a one-off "reindex all approved songs" step in song-service.)
+- **Full-text search**: seeded songs are inserted straight into `song_db`, bypassing the
+  index-on-approve flow, so they aren't in Elasticsearch yet. After seeding, push them all in
+  with one call (idempotent):
+
+  ```bash
+  curl -X POST http://localhost:8082/internal/songs/reindex   # -> {"code":1000,"result":934}
+  ```
+
+  Browsing/album/detail/play/like work without this; only `/api/search` needs it.
 - Cloudinary free tier: ~25 GB storage/bandwidth. 1000 tracks ≈ 3–5 GB storage; heavy playback
   will consume bandwidth quota. Use `--count` to scale down, or `--no-upload` to keep source URLs.

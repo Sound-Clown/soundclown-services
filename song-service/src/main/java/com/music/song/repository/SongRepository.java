@@ -19,6 +19,8 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     List<Song> findByAlbumIdAndStatusOrderByCreatedAtDesc(Long albumId, SongStatus status);
 
+    List<Song> findByStatus(SongStatus status);
+
     long countByArtistId(Long artistId);
 
     long countByArtistIdAndStatus(Long artistId, SongStatus status);
