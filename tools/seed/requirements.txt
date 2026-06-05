@@ -1,0 +1,3 @@
+# Only needed for the real run (uploading to Cloudinary).
+# Dry-run (--no-upload) uses the Python standard library only.
+cloudinary>=1.40
