@@ -9,11 +9,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface SongRepository extends JpaRepository<Song, Long> {
 
     Page<Song> findByStatus(SongStatus status, Pageable pageable);
 
     Page<Song> findByArtistId(Long artistId, Pageable pageable);
+
+    List<Song> findByAlbumIdAndStatusOrderByCreatedAtDesc(Long albumId, SongStatus status);
 
     long countByArtistId(Long artistId);
 

@@ -4,6 +4,7 @@ import com.music.common.dto.ApiResponse;
 import com.music.common.dto.PageResponse;
 import com.music.song.dto.request.CreateAlbumRequest;
 import com.music.song.dto.request.UpdateAlbumRequest;
+import com.music.song.dto.response.AlbumDetailResponse;
 import com.music.song.dto.response.AlbumResponse;
 import com.music.song.service.AlbumService;
 import jakarta.validation.Valid;
@@ -28,6 +29,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AlbumController {
 
     private final AlbumService albumService;
+
+    // Public: listener xem chi tiết 1 album kèm danh sách bài APPROVED (để phát).
+    @GetMapping("/{id}")
+    @PreAuthorize("permitAll()")
+    public ApiResponse<AlbumDetailResponse> getAlbumDetail(@PathVariable Long id) {
+        return ApiResponse.<AlbumDetailResponse>builder()
+                .result(albumService.getAlbumDetail(id))
+                .build();
+    }
 
     @GetMapping("/my")
     public ApiResponse<PageResponse<AlbumResponse>> getMyAlbums(

@@ -31,6 +31,7 @@ public class SecurityConfig {
     private static final String[] GET_PUBLIC_ENDPOINTS = {
             "/api/songs",
             "/api/songs/{id}",
+            "/api/albums/{id}",
     };
 
     @Bean

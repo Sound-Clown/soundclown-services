@@ -3,11 +3,14 @@ package com.music.song.service;
 import com.music.common.dto.PageResponse;
 import com.music.song.dto.request.CreateAlbumRequest;
 import com.music.song.dto.request.UpdateAlbumRequest;
+import com.music.song.dto.response.AlbumDetailResponse;
 import com.music.song.dto.response.AlbumResponse;
 
 public interface AlbumService {
 
     PageResponse<AlbumResponse> getMyAlbums(int page, int size, String sortBy, String sortDir);
+
+    AlbumDetailResponse getAlbumDetail(Long id);
 
     AlbumResponse createAlbum(CreateAlbumRequest request);
 

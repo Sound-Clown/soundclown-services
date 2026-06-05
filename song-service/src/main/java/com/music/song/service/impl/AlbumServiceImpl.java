@@ -7,14 +7,17 @@ import com.music.common.security.CurrentUserProvider;
 import com.music.common.security.Role;
 import com.music.song.dto.request.CreateAlbumRequest;
 import com.music.song.dto.request.UpdateAlbumRequest;
+import com.music.song.dto.response.AlbumDetailResponse;
 import com.music.song.dto.response.AlbumResponse;
 import com.music.song.entity.Album;
 import com.music.song.entity.Song;
+import com.music.song.entity.SongStatus;
 import com.music.song.mapper.AlbumMapper;
 import com.music.song.repository.AlbumRepository;
 import com.music.song.repository.SongRepository;
 import com.music.song.service.AlbumService;
 import com.music.song.service.Pageables;
+import com.music.song.service.SongResponseAssembler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class AlbumServiceImpl implements AlbumService {
     private final AlbumRepository albumRepository;
     private final SongRepository songRepository;
     private final AlbumMapper albumMapper;
+    private final SongResponseAssembler songResponseAssembler;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -39,11 +43,22 @@ public class AlbumServiceImpl implements AlbumService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public AlbumDetailResponse getAlbumDetail(Long id) {
+        Album album = albumRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ALBUM_NOT_FOUND));
+        var songs = songResponseAssembler.toResponses(
+                songRepository.findByAlbumIdAndStatusOrderByCreatedAtDesc(id, SongStatus.APPROVED));
+        return albumMapper.toDetailResponse(album, songs);
+    }
+
+    @Override
     public AlbumResponse createAlbum(CreateAlbumRequest request) {
         Album album = Album.builder()
                 .name(request.getName())
                 .coverImage(request.getCoverImage())
                 .artistId(currentUserProvider.getCurrentUserId())
+                .artistUsername(currentUserProvider.getCurrentUsername())
                 .build();
         albumRepository.save(album);
         return albumMapper.toResponse(album);

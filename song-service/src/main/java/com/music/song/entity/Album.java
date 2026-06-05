@@ -38,6 +38,11 @@ public class Album {
     @Column(name = "artist_id", nullable = false)
     private Long artistId;
 
+    // Denormalized from the JWT at creation (same pattern as Song.artistUsername) so the
+    // public album-detail endpoint can show the artist without a cross-service call.
+    @Column(name = "artist_username", length = 50)
+    private String artistUsername;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

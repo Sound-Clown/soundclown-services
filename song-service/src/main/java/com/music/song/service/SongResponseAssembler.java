@@ -40,18 +40,21 @@ public class SongResponseAssembler {
         return songMapper.toResponse(song, albumName, liked);
     }
 
-    public PageResponse<SongResponse> toPageResponse(Page<Song> page) {
-        List<Song> songs = page.getContent();
+    // Batch-assemble a list of songs (albumName + liked resolved once for the whole list).
+    public List<SongResponse> toResponses(List<Song> songs) {
         Map<Long, String> albumNames = resolveAlbumNames(songs);
         Set<Long> likedSongIds = resolveLikedSongIds(songs);
+        return songs.stream()
+                .map(s -> songMapper.toResponse(
+                        s,
+                        s.getAlbumId() == null ? null : albumNames.get(s.getAlbumId()),
+                        likedSongIds.contains(s.getId())))
+                .toList();
+    }
 
+    public PageResponse<SongResponse> toPageResponse(Page<Song> page) {
         return PageResponse.<SongResponse>builder()
-                .content(songs.stream()
-                        .map(s -> songMapper.toResponse(
-                                s,
-                                s.getAlbumId() == null ? null : albumNames.get(s.getAlbumId()),
-                                likedSongIds.contains(s.getId())))
-                        .toList())
+                .content(toResponses(page.getContent()))
                 .page(page.getNumber() + 1)
                 .size(page.getSize())
                 .totalElements(page.getTotalElements())
