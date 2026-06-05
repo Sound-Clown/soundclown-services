@@ -10,9 +10,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:root}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
     show-sql: false
+  flyway:
+    baseline-on-migrate: true
   data:
     redis:
       host: ${REDIS_HOST:localhost}

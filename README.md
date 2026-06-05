@@ -166,7 +166,7 @@ erDiagram
 | Framework | Spring Boot 3.4 |
 | API Gateway | Spring Cloud Gateway |
 | Security | Spring Security + JWT (jjwt) |
-| Persistence | Spring Data JPA, MySQL 8 |
+| Persistence | Spring Data JPA, MySQL 8, Flyway (schema migrations) |
 | Search | Spring Data Elasticsearch |
 | Inter-service | OpenFeign (sync), Redis Pub/Sub (async) |
 | API docs | springdoc OpenAPI (Swagger UI) |
@@ -194,6 +194,19 @@ docker compose up --build   # build and run the whole system
 | MailHog (reset emails) | http://localhost:8025                     |
 
 Stop: `docker compose down` (add `-v` to also drop the data volumes).
+
+### Seed accounts
+
+On a fresh database, three accounts are seeded automatically (password `password123`):
+
+| Username | Role | Can |
+|---|---|---|
+| `admin` | ADMIN | review/approve songs, lock users |
+| `artist` | ARTIST | upload songs, manage albums |
+| `listener` | LISTENER | listen, like |
+
+> Schema is managed by **Flyway** migrations (`src/main/resources/db/migration` in each
+> stateful service); Hibernate runs in `validate` mode and does not alter tables.
 
 ---
 
