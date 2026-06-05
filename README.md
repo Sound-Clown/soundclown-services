@@ -160,18 +160,18 @@ erDiagram
 
 ## Tech stack
 
-| Area | Technology |
-|---|---|
-| Language / Runtime | Java 21 |
-| Framework | Spring Boot 3.4 |
-| API Gateway | Spring Cloud Gateway |
-| Security | Spring Security + JWT (jjwt) |
-| Persistence | Spring Data JPA, MySQL 8, Flyway (schema migrations) |
-| Search | Spring Data Elasticsearch |
-| Inter-service | OpenFeign (sync), Redis Pub/Sub (async) |
-| API docs | springdoc OpenAPI (Swagger UI) |
-| Observability | Micrometer, Prometheus, Zipkin, Grafana |
-| Build & Run | Maven (multi-module), Docker Compose |
+| Area               | Technology                                           |
+| ------------------ | ---------------------------------------------------- |
+| Language / Runtime | Java 21                                              |
+| Framework          | Spring Boot 3.4                                      |
+| API Gateway        | Spring Cloud Gateway                                 |
+| Security           | Spring Security + JWT (jjwt)                         |
+| Persistence        | Spring Data JPA, MySQL 8, Flyway (schema migrations) |
+| Search             | Spring Data Elasticsearch                            |
+| Inter-service      | OpenFeign (sync), Redis Pub/Sub (async)              |
+| API docs           | springdoc OpenAPI (Swagger UI)                       |
+| Observability      | Micrometer, Prometheus, Zipkin, Grafana              |
+| Build & Run        | Maven (multi-module), Docker Compose                 |
 
 ---
 
@@ -199,11 +199,11 @@ Stop: `docker compose down` (add `-v` to also drop the data volumes).
 
 On a fresh database, three accounts are seeded automatically (password `password123`):
 
-| Username | Role | Can |
-|---|---|---|
-| `admin` | ADMIN | review/approve songs, lock users |
-| `artist` | ARTIST | upload songs, manage albums |
-| `listener` | LISTENER | listen, like |
+| Username   | Role     | Can                              |
+| ---------- | -------- | -------------------------------- |
+| `admin`    | ADMIN    | review/approve songs, lock users |
+| `artist`   | ARTIST   | upload songs, manage albums      |
+| `listener` | LISTENER | listen, like                     |
 
 > Schema is managed by **Flyway** migrations (`src/main/resources/db/migration` in each
 > stateful service); Hibernate runs in `validate` mode and does not alter tables.
@@ -229,8 +229,8 @@ Full API contract for the frontend: **Swagger UI** (link above) — complete req
 
 ### Roles
 
-| Role | Capabilities |
-|---|---|
-| `LISTENER` | Listen, like |
-| `ARTIST` | Upload songs, manage albums (+ everything a LISTENER can do) |
-| `ADMIN` | Review/approve songs, lock/unlock users |
+| Role       | Capabilities                                                 |
+| ---------- | ------------------------------------------------------------ |
+| `LISTENER` | Listen, like                                                 |
+| `ARTIST`   | Upload songs, manage albums (+ everything a LISTENER can do) |
+| `ADMIN`    | Review/approve songs, lock/unlock users                      |
