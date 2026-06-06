@@ -195,6 +195,17 @@ docker compose up --build   # build and run the whole system
 
 Stop: `docker compose down` (add `-v` to also drop the data volumes).
 
+### Deploy a single service
+
+Each service has its own `Dockerfile` for independent deployment (one server / pipeline per
+service). Because it's a Maven multi-module build, **the build context is the repo root** (it needs
+the parent pom + `common`):
+
+```bash
+docker build -f auth-service/Dockerfile -t soundclown-auth-service .   # note the trailing "."
+docker run -e SPRING_DATASOURCE_URL=... -e JWT_SECRET=... -p 8081:8081 soundclown-auth-service
+```
+
 ### Seed accounts
 
 On a fresh database, three accounts are seeded automatically (password `password123`):
