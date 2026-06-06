@@ -145,6 +145,15 @@ public class SongServiceImpl implements SongService {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResponse<SongResponse> getLikedSongs(int page, int size, String sortBy, String sortDir) {
+        Long userId = currentUserProvider.getCurrentUserId();
+        Pageable pageable = Pageables.of(page, size, sortBy, sortDir);
+        return assembler.toPageResponse(
+                songRepository.findLikedSongs(userId, SongStatus.APPROVED, pageable));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public StatsResponse getMyStats() {
         Long artistId = currentUserProvider.getCurrentUserId();
         return StatsResponse.builder()

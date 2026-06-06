@@ -17,6 +17,12 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     Page<Song> findByStatusAndArtistUsername(SongStatus status, String artistUsername, Pageable pageable);
 
+    @Query(value = "select s from Song s where s.status = :status "
+            + "and s.id in (select l.id.songId from Like l where l.id.userId = :userId)",
+            countQuery = "select count(s) from Song s where s.status = :status "
+                    + "and s.id in (select l.id.songId from Like l where l.id.userId = :userId)")
+    Page<Song> findLikedSongs(@Param("userId") Long userId, @Param("status") SongStatus status, Pageable pageable);
+
     Page<Song> findByArtistId(Long artistId, Pageable pageable);
 
     List<Song> findByAlbumIdAndStatusOrderByCreatedAtDesc(Long albumId, SongStatus status);

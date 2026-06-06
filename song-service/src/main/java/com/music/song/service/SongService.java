@@ -25,5 +25,7 @@ public interface SongService {
 
     PageResponse<SongResponse> getMySongs(int page, int size, String sortBy, String sortDir);
 
+    PageResponse<SongResponse> getLikedSongs(int page, int size, String sortBy, String sortDir);
+
     StatsResponse getMyStats();
 }

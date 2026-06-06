@@ -45,6 +45,18 @@ public class SongController {
                 .build();
     }
 
+    // Bài user hiện tại đã like (mọi role có token). Auth enforced trong service qua CurrentUserProvider.
+    @GetMapping("/liked")
+    public ApiResponse<PageResponse<SongResponse>> getLikedSongs(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        return ApiResponse.<PageResponse<SongResponse>>builder()
+                .result(songService.getLikedSongs(page, size, sortBy, sortDir))
+                .build();
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('ARTIST')")
     public ApiResponse<PageResponse<SongResponse>> getMySongs(
