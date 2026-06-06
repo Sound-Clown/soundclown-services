@@ -206,6 +206,34 @@ docker build -f auth-service/Dockerfile -t soundclown-auth-service .   # note th
 docker run -e SPRING_DATASOURCE_URL=... -e JWT_SECRET=... -p 8081:8081 soundclown-auth-service
 ```
 
+### Deploy on a VPS (Docker Compose)
+
+The whole stack runs on a single host. Suggested: a VPS with **Docker + Compose** and **~4 GB RAM**
+(Elasticsearch alone wants ~1 GB).
+
+```bash
+git clone <repo> && cd soundclown-services
+cp .env.example .env          # set a strong JWT_SECRET, DB_PASSWORD, Cloudinary creds
+docker compose up -d --build
+```
+
+> **Security — important.** Compose publishes every port on `0.0.0.0`, including **Redis (6379)** and
+> **Elasticsearch (9200)** which have **no auth**. On a public IP that is a real risk. Lock it down at
+> the VPS firewall — expose only SSH and the gateway:
+>
+> ```bash
+> sudo ufw allow 22/tcp && sudo ufw allow 8080/tcp && sudo ufw enable
+> ```
+>
+> Then reach internal UIs (Grafana, Zipkin, …) via an SSH tunnel, e.g.
+> `ssh -L 3001:localhost:3001 your-vps` → open `localhost:3001`.
+
+- **TLS / domain**: put Caddy or nginx in front of `:8080` (Caddy gives auto-HTTPS in ~3 lines), then
+  also allow `80/443` in the firewall.
+- **Email**: MailHog is a dev catcher — point `SMTP_HOST/PORT` at a real SMTP for production mail.
+- If you seeded songs, populate search once:
+  `curl -X POST http://localhost:8082/internal/songs/reindex` (run it on the VPS).
+
 ### Seed accounts
 
 On a fresh database, three accounts are seeded automatically (password `password123`):
