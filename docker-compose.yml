@@ -19,7 +19,7 @@ services:
     build:
       context: .
       args: { MODULE: api-gateway }
-    ports: [ "8080:8080" ]
+    ports: [ "${GATEWAY_PORT:-8080}:8080" ]
     environment:
       <<: *observability
       AUTH_SERVICE_URL: http://auth-service:8081
@@ -36,7 +36,7 @@ services:
     build:
       context: .
       args: { MODULE: auth-service }
-    ports: [ "8081:8081" ]
+    ports: [ "${AUTH_PORT:-8081}:8081" ]
     environment:
       <<: *observability
       SPRING_DATASOURCE_URL: jdbc:mysql://auth-db:3306/auth_db?serverTimezone=UTC
@@ -53,7 +53,7 @@ services:
     build:
       context: .
       args: { MODULE: song-service }
-    ports: [ "8082:8082" ]
+    ports: [ "${SONG_PORT:-8082}:8082" ]
     environment:
       <<: *observability
       SPRING_DATASOURCE_URL: jdbc:mysql://song-db:3306/song_db?serverTimezone=UTC
@@ -68,7 +68,7 @@ services:
     build:
       context: .
       args: { MODULE: user-service }
-    ports: [ "8083:8083" ]
+    ports: [ "${USER_PORT:-8083}:8083" ]
     environment:
       <<: *observability
       SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?serverTimezone=UTC
@@ -83,7 +83,7 @@ services:
     build:
       context: .
       args: { MODULE: media-service }
-    ports: [ "8085:8085" ]
+    ports: [ "${MEDIA_PORT:-8085}:8085" ]
     environment:
       <<: *observability
       JWT_SECRET: *jwt-secret
@@ -95,7 +95,7 @@ services:
     build:
       context: .
       args: { MODULE: search-service }
-    ports: [ "8084:8084" ]
+    ports: [ "${SEARCH_PORT:-8084}:8084" ]
     environment:
       <<: *observability
       ELASTICSEARCH_URIS: http://elasticsearch:9200
@@ -107,7 +107,7 @@ services:
     build:
       context: .
       args: { MODULE: notification-service }
-    ports: [ "8086:8086" ]
+    ports: [ "${NOTIFICATION_PORT:-8086}:8086" ]
     environment:
       <<: *observability
       REDIS_HOST: redis
@@ -156,7 +156,7 @@ services:
   # ---------- Infrastructure ----------
   redis:
     image: redis:7-alpine
-    ports: [ "6379:6379" ]
+    ports: [ "${REDIS_HOST_PORT:-6379}:6379" ]
     volumes: [ "redis-data:/data" ]
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -170,7 +170,7 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    ports: [ "9200:9200" ]
+    ports: [ "${ELASTICSEARCH_PORT:-9200}:9200" ]
     volumes: [ "es-data:/usr/share/elasticsearch/data" ]
     healthcheck:
       test: [ "CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1" ]
@@ -181,18 +181,18 @@ services:
   # Dev SMTP catcher — open http://localhost:8025 to read reset-password emails.
   mailhog:
     image: mailhog/mailhog
-    ports: [ "1025:1025", "8025:8025" ]
+    ports: [ "${MAILHOG_SMTP_PORT:-1025}:1025", "${MAILHOG_UI_PORT:-8025}:8025" ]
 
   # ---------- Observability ----------
   # Distributed tracing — open http://localhost:9411 to follow a request across services.
   zipkin:
     image: openzipkin/zipkin:3
-    ports: [ "9411:9411" ]
+    ports: [ "${ZIPKIN_PORT:-9411}:9411" ]
 
   # Metrics scraper — scrapes each service's /actuator/prometheus (see monitoring/prometheus.yml).
   prometheus:
     image: prom/prometheus:latest
-    ports: [ "9090:9090" ]
+    ports: [ "${PROMETHEUS_PORT:-9090}:9090" ]
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -200,7 +200,7 @@ services:
   # Dashboards — open http://localhost:3001 (admin/admin), Prometheus datasource pre-wired.
   grafana:
     image: grafana/grafana:latest
-    ports: [ "3001:3000" ]
+    ports: [ "${GRAFANA_PORT:-3001}:3000" ]
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
