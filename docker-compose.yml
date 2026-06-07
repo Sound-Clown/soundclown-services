@@ -111,14 +111,14 @@ services:
     environment:
       <<: *observability
       REDIS_HOST: redis
-      # Defaults to the built-in MailHog catcher. Set these in .env to send real email
-      # (e.g. Gmail SMTP) — see .env.example.
-      SMTP_HOST: ${SMTP_HOST:-mailhog}
-      SMTP_PORT: ${SMTP_PORT:-1025}
+      # Real SMTP — set these in .env (e.g. Gmail/SendGrid). Email delivery is best-effort:
+      # if SMTP is unset/unreachable the forgot-password call still succeeds, just no mail.
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_AUTH: ${SMTP_AUTH:-false}
-      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMTP_AUTH: ${SMTP_AUTH:-true}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
       MAIL_FROM: ${MAIL_FROM:-no-reply@soundclown.local}
       RESET_PASSWORD_URL: ${RESET_PASSWORD_URL:-http://localhost:3000/reset-password}
     depends_on:
@@ -185,11 +185,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
-
-  # Dev SMTP catcher — open http://localhost:8025 to read reset-password emails.
-  mailhog:
-    image: mailhog/mailhog
-    ports: [ "${MAILHOG_SMTP_PORT:-1025}:1025", "${MAILHOG_UI_PORT:-8025}:8025" ]
 
   # ---------- Observability ----------
   # Distributed tracing — open http://localhost:9411 to follow a request across services.
