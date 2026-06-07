@@ -111,8 +111,16 @@ services:
     environment:
       <<: *observability
       REDIS_HOST: redis
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
+      # Defaults to the built-in MailHog catcher. Set these in .env to send real email
+      # (e.g. Gmail SMTP) — see .env.example.
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_AUTH: ${SMTP_AUTH:-false}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@soundclown.local}
+      RESET_PASSWORD_URL: ${RESET_PASSWORD_URL:-http://localhost:3000/reset-password}
     depends_on:
       redis: { condition: service_healthy }
 
