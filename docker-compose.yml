@@ -45,6 +45,7 @@ services:
       JWT_SECRET: *jwt-secret
       REDIS_HOST: redis
       USER_SERVICE_URL: http://user-service:8083
+      PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-30}
     depends_on:
       auth-db: { condition: service_healthy }
       redis: { condition: service_healthy }
