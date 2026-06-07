@@ -1,7 +1,7 @@
 # Seed real music into song-service
 
 `seed_songs.py` pulls **real Creative-Commons tracks** from Jamendo + Internet Archive,
-uploads the audio/cover to *this project's* Cloudinary, and generates a Flyway migration
+uploads the audio/cover to _this project's_ Cloudinary, and generates a Flyway migration
 `song-service/src/main/resources/db/migration/V2__seed_songs.sql` (albums + songs, all
 `APPROVED`, owned by the seed `artist` account, id = 2).
 
@@ -60,5 +60,6 @@ docker compose up --build      # Flyway runs V1 then V2 on a fresh song_db
   ```
 
   Browsing/album/detail/play/like work without this; only `/api/search` needs it.
+
 - Cloudinary free tier: ~25 GB storage/bandwidth. 1000 tracks ≈ 3–5 GB storage; heavy playback
   will consume bandwidth quota. Use `--count` to scale down, or `--no-upload` to keep source URLs.

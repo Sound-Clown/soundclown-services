@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Seed real Creative-Commons music into song-service.
 
