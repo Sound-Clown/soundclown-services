@@ -159,8 +159,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
-    // Best-effort mirror to user-service. Registration must not fail if user-service is down;
-    // the profile can be re-synced later (an event bus would make this reliable — Phase 3).
+    // Best-effort mirror to user-service. Registration must not fail if user-service is down, the profile can be re-synced later (an event bus would make this reliable — Phase 3).
     private void syncProfile(User user) {
         try {
             userSyncClient.upsert(UserProfileSyncRequest.builder()
