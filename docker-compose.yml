@@ -192,6 +192,12 @@ services:
   zipkin:
     image: openzipkin/zipkin:3
     ports: [ "${ZIPKIN_PORT:-9411}:9411" ]
+    restart: unless-stopped
+    environment:
+      # In-memory storage grows until heap OOMs at the 500k default. Traces here are
+      # ephemeral dev data, so cap spans hard and bound the heap to keep it lightweight.
+      MEM_MAX_SPANS: 10000
+      JAVA_OPTS: -Xms128m -Xmx256m
 
   # Metrics scraper — scrapes each service's /actuator/prometheus (see monitoring/prometheus.yml).
   prometheus:
