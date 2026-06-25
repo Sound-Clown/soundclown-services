@@ -22,6 +22,7 @@ public class SongMapper {
                 .playCount(song.getPlayCount())
                 .likeCount(song.getLikeCount())
                 .liked(liked)
+                .premiumOnly(song.isPremiumOnly())
                 .createdAt(song.getCreatedAt())
                 .build();
     }

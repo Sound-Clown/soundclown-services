@@ -1,11 +1,14 @@
 package com.music.song.service.impl;
 
+import com.music.common.dto.ApiResponse;
 import com.music.common.dto.PageResponse;
 import com.music.common.exception.AppException;
 import com.music.common.exception.ErrorCode;
 import com.music.common.security.AuthPrincipal;
 import com.music.common.security.CurrentUserProvider;
 import com.music.common.security.Role;
+import com.music.song.client.PremiumStatus;
+import com.music.song.client.UserPremiumClient;
 import com.music.song.dto.request.CreateSongRequest;
 import com.music.song.dto.request.UpdateSongRequest;
 import com.music.song.dto.response.LikeResponse;
@@ -24,11 +27,13 @@ import com.music.song.service.SongResponseAssembler;
 import com.music.song.service.SongSearchIndexer;
 import com.music.song.service.SongService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -40,6 +45,7 @@ public class SongServiceImpl implements SongService {
     private final SongResponseAssembler assembler;
     private final CurrentUserProvider currentUserProvider;
     private final SongSearchIndexer searchIndexer;
+    private final UserPremiumClient userPremiumClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -59,10 +65,25 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public void play(Long id) {
-        if (!songRepository.existsById(id)) {
-            throw new AppException(ErrorCode.SONG_NOT_FOUND);
+        Song song = songRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SONG_NOT_FOUND));
+        if (song.isPremiumOnly() && !isCurrentUserPremium()) {
+            throw new AppException(ErrorCode.SONG_PREMIUM_REQUIRED);
         }
         songRepository.incrementPlayCount(id);
+    }
+
+    // Asks user-service whether the caller has an active premium subscription. Fail closed:
+    // if user-service is unreachable, deny premium-only playback rather than leak it.
+    private boolean isCurrentUserPremium() {
+        Long userId = currentUserProvider.getCurrentUserId();
+        try {
+            ApiResponse<PremiumStatus> response = userPremiumClient.getPremiumStatus(userId);
+            return response != null && response.getResult() != null && response.getResult().isPremium();
+        } catch (Exception ex) {
+            log.warn("Premium check failed for user {} — denying premium-only playback", userId, ex);
+            return false;
+        }
     }
 
     @Override
