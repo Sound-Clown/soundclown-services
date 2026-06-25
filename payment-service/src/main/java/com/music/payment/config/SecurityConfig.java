@@ -25,11 +25,9 @@ public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
 
-    // VNPay callbacks carry no JWT (browser redirect / VNPay server) — they are authenticated
-    // by the HMAC signature instead, so they must be permitAll here.
+    // Stripe redirects the browser here with no JWT — confirmation is done by retrieving the
+    // session server-side (secret key), so this endpoint must be permitAll.
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/payments/vnpay-return",
-            "/api/payments/vnpay-ipn",
             "/api/payments/stripe-return",
     };
 

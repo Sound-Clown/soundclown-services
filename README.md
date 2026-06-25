@@ -37,7 +37,7 @@ flowchart TB
     REDIS[("Redis")]
     CLOUD["Cloudinary"]
     MAIL["SMTP / MailHog"]
-    VNPAY["VNPay / Stripe"]
+    STRIPE["Stripe"]
 
     Client --> GW
     GW --> AUTH & SONG & USER & SEARCH & MEDIA & PAYMENT
@@ -48,7 +48,7 @@ flowchart TB
     PAYMENT --- PAYMENTDB
     SEARCH --- ES
     MEDIA -. upload .-> CLOUD
-    PAYMENT -. "checkout / verify" .-> VNPAY
+    PAYMENT -. "checkout / verify" .-> STRIPE
 
     AUTH -- "Feign: sync profile" --> USER
     USER -- "Feign: lock account" --> AUTH
@@ -78,7 +78,7 @@ infrastructure. Every service validates the JWT itself (defense in depth) and ex
 | **search-service**       | 8084 | Full-text (fuzzy) song search                            | Elasticsearch        |
 | **media-service**        | 8085 | Upload audio/images to Cloudinary                        | — (stateless)        |
 | **notification-service** | 8086 | Send reset-password email (async)                        | — (Redis subscriber) |
-| **payment-service**      | 8087 | Premium subscription checkout via VNPay                  | MySQL `payment_db`   |
+| **payment-service**      | 8087 | Premium subscription checkout via Stripe                 | MySQL `payment_db`   |
 | **common**               | —    | Shared library: `ApiResponse`, `ErrorCode`, JWT, OpenAPI | —                    |
 
 ---
@@ -174,9 +174,9 @@ erDiagram
         bigint amount "VND"
         varchar currency
         varchar status "PENDING|PAID|FAILED|CANCELLED"
-        varchar provider "VNPAY"
-        varchar txn_ref UK "merchant ref (vnp_TxnRef)"
-        varchar bank_txn_no "vnp_TransactionNo"
+        varchar provider "STRIPE"
+        varchar txn_ref UK "our order ref"
+        varchar bank_txn_no "Stripe session / payment-intent id"
         varchar order_info
         int duration_days
         datetime created_at
@@ -212,7 +212,7 @@ erDiagram
 Requires **Docker** + Docker Compose.
 
 ```bash
-cp .env.example .env        # set JWT_SECRET (+ Cloudinary for uploads, VNPay creds for payments)
+cp .env.example .env        # set JWT_SECRET (+ Cloudinary for uploads, Stripe key for payments)
 docker compose up --build   # build and run the whole system
 ```
 
@@ -262,9 +262,9 @@ docker compose up -d --build
 - **TLS / domain**: put Caddy or nginx in front of `:8080` (Caddy gives auto-HTTPS in ~3 lines), then
   also allow `80/443` in the firewall.
 - **Email**: set `SMTP_HOST/PORT/USER/PASS` (e.g. Gmail/SendGrid) so reset-password mail is delivered.
-- **Payments**: VNPay needs `VNP_*` keys from a [VNPay sandbox](https://sandbox.vnpayment.vn) merchant;
-  Stripe just needs a test `STRIPE_SECRET_KEY` ([dashboard](https://dashboard.stripe.com/test/apikeys),
-  no approval). Point the `*_RETURN_URL` / `PAYMENT_RESULT_URL` at URLs reachable from the user's browser.
+- **Payments**: set a test `STRIPE_SECRET_KEY` ([dashboard](https://dashboard.stripe.com/test/apikeys),
+  no approval needed). Point `STRIPE_RETURN_URL` / `PAYMENT_RESULT_URL` at URLs reachable from the
+  user's browser; test with card `4242 4242 4242 4242`.
 - If you seeded songs, populate search once:
   `curl -X POST http://localhost:8082/internal/songs/reindex` (run it on the VPS).
 
@@ -311,7 +311,7 @@ Full API contract for the frontend: **Swagger UI** (link above) — complete req
 ### Premium (subscription)
 
 Orthogonal to roles — any account can buy **Premium** (30 days) to play `premium_only` songs.
-`POST /api/payments/checkout?provider=vnpay|stripe` returns a hosted-payment-page URL (**VNPay** or
-**Stripe Checkout**); on a verified callback payment-service publishes a `premium-upgrade` event,
-user-service sets `premium_until`, and song-service then allows premium-only playback (premium checked
-via Feign; `ADMIN` bypasses the gate, while non-premium users get `1305 SONG_PREMIUM_REQUIRED` on `play`).
+`POST /api/payments/checkout` returns a **Stripe Checkout** URL; on the return payment-service confirms
+the session and publishes a `premium-upgrade` event, user-service sets `premium_until`, and song-service
+then allows premium-only playback (premium checked via Feign; `ADMIN` bypasses the gate, while
+non-premium users get `1305 SONG_PREMIUM_REQUIRED` on `play`).

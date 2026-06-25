@@ -23,24 +23,11 @@ spring:
 jwt:
   secret: ${JWT_SECRET:dev-secret-change-me-please-min-32-characters-long}
 
-# Premium plan: one purchase grants `duration-days` of premium for `price-vnd`.
+# Premium plan: one purchase grants `duration-days` of premium.
 premium:
-  price-vnd: ${PREMIUM_PRICE_VND:50000}
   duration-days: ${PREMIUM_DURATION_DAYS:30}
 
-# VNPay sandbox. Register at https://sandbox.vnpayment.vn to get tmn-code + hash-secret.
-vnpay:
-  tmn-code: ${VNP_TMN_CODE:}
-  hash-secret: ${VNP_HASH_SECRET:}
-  pay-url: ${VNP_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-  # VNPay redirects the user's browser here after paying (must reach this service via the gateway).
-  return-url: ${VNP_RETURN_URL:http://localhost:8080/api/payments/vnpay-return}
-  version: "2.1.0"
-  command: pay
-  order-type: other
-  locale: ${VNP_LOCALE:vn}
-
-# Stripe Checkout (alternative to VNPay). Test mode: get a secret key (sk_test_...) from
+# Stripe Checkout. Test mode: get a secret key (sk_test_...) from
 # https://dashboard.stripe.com/test/apikeys — no merchant approval needed.
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:}

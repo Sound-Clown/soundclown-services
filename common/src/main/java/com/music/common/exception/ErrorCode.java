@@ -47,8 +47,6 @@ public enum ErrorCode {
 
     // Payment 1701-1800
     PAYMENT_NOT_FOUND(1701, "Không tìm thấy giao dịch", HttpStatus.NOT_FOUND),
-    PAYMENT_INVALID_SIGNATURE(1702, "Chữ ký thanh toán không hợp lệ", HttpStatus.BAD_REQUEST),
-    PAYMENT_ALREADY_FINALIZED(1703, "Giao dịch đã được xử lý", HttpStatus.CONFLICT),
     PAYMENT_NOT_CONFIGURED(1704, "Cổng thanh toán chưa được cấu hình", HttpStatus.SERVICE_UNAVAILABLE),
 
     // Validation / request 1900-1999

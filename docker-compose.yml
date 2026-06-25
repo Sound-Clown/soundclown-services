@@ -141,13 +141,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: *db-password
       JWT_SECRET: *jwt-secret
       REDIS_HOST: redis
-      PREMIUM_PRICE_VND: ${PREMIUM_PRICE_VND:-50000}
       PREMIUM_DURATION_DAYS: ${PREMIUM_DURATION_DAYS:-30}
-      # VNPay sandbox — register at https://sandbox.vnpayment.vn to get these.
-      VNP_TMN_CODE: ${VNP_TMN_CODE:-}
-      VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
-      VNP_PAY_URL: ${VNP_PAY_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-      VNP_RETURN_URL: ${VNP_RETURN_URL:-http://localhost:8080/api/payments/vnpay-return}
       # Stripe (test mode) — get a secret key from https://dashboard.stripe.com/test/apikeys
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_RETURN_URL: ${STRIPE_RETURN_URL:-http://localhost:8080/api/payments/stripe-return}

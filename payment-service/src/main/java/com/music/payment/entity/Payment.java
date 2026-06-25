@@ -56,12 +56,12 @@ public class Payment {
     @Column(nullable = false, length = 20)
     private String provider;
 
-    // Our merchant reference sent to VNPay as vnp_TxnRef; unique.
+    // Our order reference (Stripe client_reference_id); unique.
     @Column(name = "txn_ref", nullable = false, length = 64)
     private String txnRef;
 
-    // Provider transaction reference (VNPay vnp_TransactionNo, or a Stripe session/payment-intent id —
-    // Stripe ids are long, so this is wide).
+    // Stripe Checkout Session id at checkout, then the PaymentIntent id once paid. Stripe ids are
+    // long, so this is wide.
     @Column(name = "bank_txn_no", length = 255)
     private String bankTxnNo;
 
