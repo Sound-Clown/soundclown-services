@@ -60,8 +60,9 @@ public class Payment {
     @Column(name = "txn_ref", nullable = false, length = 64)
     private String txnRef;
 
-    // VNPay's own transaction number (vnp_TransactionNo), set on success.
-    @Column(name = "bank_txn_no", length = 64)
+    // Provider transaction reference (VNPay vnp_TransactionNo, or a Stripe session/payment-intent id —
+    // Stripe ids are long, so this is wide).
+    @Column(name = "bank_txn_no", length = 255)
     private String bankTxnNo;
 
     @Column(name = "order_info", length = 255)
