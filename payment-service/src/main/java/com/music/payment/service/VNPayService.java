@@ -1,8 +1,11 @@
 package com.music.payment.service;
 
+import com.music.common.exception.AppException;
+import com.music.common.exception.ErrorCode;
 import com.music.payment.config.VnpayProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,8 +35,16 @@ public class VNPayService {
 
     private final VnpayProperties props;
 
+    /** Fails with a clear error if VNPay credentials aren't configured (e.g. VNP_HASH_SECRET unset). */
+    public void ensureConfigured() {
+        if (!StringUtils.hasText(props.getTmnCode()) || !StringUtils.hasText(props.getHashSecret())) {
+            throw new AppException(ErrorCode.PAYMENT_NOT_CONFIGURED);
+        }
+    }
+
     /** Builds the VNPay redirect URL for an order. amountVnd is the plain VND amount (e.g. 50000). */
     public String buildPaymentUrl(String txnRef, long amountVnd, String orderInfo, String clientIp) {
+        ensureConfigured();
         ZonedDateTime now = ZonedDateTime.now(VN_ZONE);
 
         Map<String, String> params = new TreeMap<>();

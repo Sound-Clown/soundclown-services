@@ -40,6 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public CheckoutResponse checkout(String clientIp) {
+        vnPayService.ensureConfigured(); // fail fast with a clear error before creating an order
         AuthPrincipal user = currentUserProvider.getCurrentUser();
         // Unique merchant reference: timestamp + userId (digits only, within VNPay's length limit).
         String txnRef = System.currentTimeMillis() + String.valueOf(user.userId());
