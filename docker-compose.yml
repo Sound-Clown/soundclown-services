@@ -27,6 +27,7 @@ services:
       USER_SERVICE_URL: http://user-service:8083
       MEDIA_SERVICE_URL: http://media-service:8085
       SEARCH_SERVICE_URL: http://search-service:8084
+      PAYMENT_SERVICE_URL: http://payment-service:8087
       REDIS_HOST: redis
     depends_on:
       redis: { condition: service_healthy }
@@ -62,6 +63,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: *db-password
       JWT_SECRET: *jwt-secret
       SEARCH_SERVICE_URL: http://search-service:8084
+      USER_SERVICE_URL: http://user-service:8083
     depends_on:
       song-db: { condition: service_healthy }
 
@@ -77,8 +79,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: *db-password
       JWT_SECRET: *jwt-secret
       AUTH_SERVICE_URL: http://auth-service:8081
+      REDIS_HOST: redis
     depends_on:
       user-db: { condition: service_healthy }
+      redis: { condition: service_healthy }
 
   media-service:
     build:
@@ -125,6 +129,30 @@ services:
     depends_on:
       redis: { condition: service_healthy }
 
+  payment-service:
+    build:
+      context: .
+      args: { MODULE: payment-service }
+    ports: [ "${PAYMENT_PORT:-8087}:8087" ]
+    environment:
+      <<: *observability
+      SPRING_DATASOURCE_URL: jdbc:mysql://payment-db:3306/payment_db?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: *db-password
+      JWT_SECRET: *jwt-secret
+      REDIS_HOST: redis
+      PREMIUM_PRICE_VND: ${PREMIUM_PRICE_VND:-50000}
+      PREMIUM_DURATION_DAYS: ${PREMIUM_DURATION_DAYS:-30}
+      # VNPay sandbox — register at https://sandbox.vnpayment.vn to get these.
+      VNP_TMN_CODE: ${VNP_TMN_CODE:-}
+      VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
+      VNP_PAY_URL: ${VNP_PAY_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+      VNP_RETURN_URL: ${VNP_RETURN_URL:-http://localhost:8080/api/payments/vnpay-return}
+      PAYMENT_RESULT_URL: ${PAYMENT_RESULT_URL:-http://localhost:3000/payment-result}
+    depends_on:
+      payment-db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
   # ---------- Databases (one per service) ----------
   auth-db:
     image: mysql:8
@@ -156,6 +184,18 @@ services:
       MYSQL_DATABASE: user_db
       MYSQL_ROOT_PASSWORD: *db-password
     volumes: [ "user-db-data:/var/lib/mysql" ]
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  payment-db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: payment_db
+      MYSQL_ROOT_PASSWORD: *db-password
+    volumes: [ "payment-db-data:/var/lib/mysql" ]
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
       interval: 10s
@@ -231,6 +271,8 @@ volumes:
     name: soundclown-song-db-data
   user-db-data:
     name: soundclown-user-db-data
+  payment-db-data:
+    name: soundclown-payment-db-data
   es-data:
     name: soundclown-es-data
   redis-data:
