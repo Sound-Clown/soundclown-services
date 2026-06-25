@@ -67,21 +67,25 @@ public class SongServiceImpl implements SongService {
     public void play(Long id) {
         Song song = songRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SONG_NOT_FOUND));
-        if (song.isPremiumOnly() && !isCurrentUserPremium()) {
+        if (song.isPremiumOnly() && !canCurrentUserPlayPremium()) {
             throw new AppException(ErrorCode.SONG_PREMIUM_REQUIRED);
         }
         songRepository.incrementPlayCount(id);
     }
 
-    // Asks user-service whether the caller has an active premium subscription. Fail closed:
-    // if user-service is unreachable, deny premium-only playback rather than leak it.
-    private boolean isCurrentUserPremium() {
-        Long userId = currentUserProvider.getCurrentUserId();
+    // Who may play premium-only songs: ADMIN (platform operator, bypasses the gate) or any user
+    // with an active premium subscription. Premium is checked via user-service. Fail closed:
+    // if user-service is unreachable, deny rather than leak premium content.
+    private boolean canCurrentUserPlayPremium() {
+        AuthPrincipal user = currentUserProvider.getCurrentUser();
+        if (user.role() == Role.ADMIN) {
+            return true;
+        }
         try {
-            ApiResponse<PremiumStatus> response = userPremiumClient.getPremiumStatus(userId);
+            ApiResponse<PremiumStatus> response = userPremiumClient.getPremiumStatus(user.userId());
             return response != null && response.getResult() != null && response.getResult().isPremium();
         } catch (Exception ex) {
-            log.warn("Premium check failed for user {} — denying premium-only playback", userId, ex);
+            log.warn("Premium check failed for user {} — denying premium-only playback", user.userId(), ex);
             return false;
         }
     }

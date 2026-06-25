@@ -312,4 +312,5 @@ Full API contract for the frontend: **Swagger UI** (link above) — complete req
 Orthogonal to roles — any account can buy **Premium** (30 days) to play `premium_only` songs.
 `POST /api/payments/checkout` returns a signed **VNPay** URL; on a verified callback payment-service
 publishes a `premium-upgrade` event, user-service sets `premium_until`, and song-service then allows
-premium-only playback (checked via Feign; free users get `1305 SONG_PREMIUM_REQUIRED` on `play`).
+premium-only playback (premium checked via Feign; `ADMIN` bypasses the gate, while non-premium users
+get `1305 SONG_PREMIUM_REQUIRED` on `play`).
