@@ -30,6 +30,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/payments/vnpay-return",
             "/api/payments/vnpay-ipn",
+            "/api/payments/stripe-return",
     };
 
     @Bean

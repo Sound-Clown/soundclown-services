@@ -53,6 +53,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- Stripe Checkout (alternative payment provider to VNPay). -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>29.5.0</version>
+        </dependency>
 
         <dependency>
             <groupId>com.mysql</groupId>

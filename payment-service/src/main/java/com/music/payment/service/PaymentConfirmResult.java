@@ -1,8 +1,8 @@
 package com.music.payment.service;
 
-// Outcome of confirming a VNPay return/IPN callback. Modeled as a value (not an exception)
-// because both callbacks need to map it to a redirect / RspCode rather than an error response.
-public record VnpConfirmResult(Outcome outcome, String txnRef) {
+// Outcome of confirming a payment callback (VNPay return/IPN or Stripe return). Modeled as a value
+// (not an exception) because callbacks map it to a redirect / RspCode rather than an error response.
+public record PaymentConfirmResult(Outcome outcome, String txnRef) {
 
     public enum Outcome {
         SUCCESS,

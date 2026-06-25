@@ -8,9 +8,12 @@ import com.music.payment.entity.Payment;
 import com.music.payment.entity.PaymentStatus;
 import com.music.payment.event.PremiumUpgradePublisher;
 import com.music.payment.repository.PaymentRepository;
+import com.music.payment.service.PaymentConfirmResult;
+import com.music.payment.service.PaymentProvider;
 import com.music.payment.service.PaymentService;
+import com.music.payment.service.StripeService;
 import com.music.payment.service.VNPayService;
-import com.music.payment.service.VnpConfirmResult;
+import com.stripe.model.checkout.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +31,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final VNPayService vnPayService;
+    private final StripeService stripeService;
     private final PremiumUpgradePublisher premiumUpgradePublisher;
     private final CurrentUserProvider currentUserProvider;
 
@@ -39,74 +43,131 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public CheckoutResponse checkout(String clientIp) {
-        vnPayService.ensureConfigured(); // fail fast with a clear error before creating an order
+    public CheckoutResponse checkout(PaymentProvider provider, String clientIp) {
         AuthPrincipal user = currentUserProvider.getCurrentUser();
-        // Unique merchant reference: timestamp + userId (digits only, within VNPay's length limit).
+        // Unique merchant reference: timestamp + userId (digits only, within provider length limits).
         String txnRef = System.currentTimeMillis() + String.valueOf(user.userId());
         String orderInfo = "Nang cap tai khoan Premium " + premiumDurationDays + " ngay";
 
-        Payment payment = Payment.builder()
-                .userId(user.userId())
-                .username(user.username())
-                .amount(premiumPriceVnd)
-                .currency("VND")
-                .status(PaymentStatus.PENDING)
-                .provider("VNPAY")
-                .txnRef(txnRef)
-                .orderInfo(orderInfo)
-                .durationDays(premiumDurationDays)
-                .build();
+        return switch (provider) {
+            case VNPAY -> checkoutVnpay(user, txnRef, orderInfo, clientIp);
+            case STRIPE -> checkoutStripe(user, txnRef, orderInfo);
+        };
+    }
+
+    private CheckoutResponse checkoutVnpay(AuthPrincipal user, String txnRef, String orderInfo, String clientIp) {
+        vnPayService.ensureConfigured(); // fail fast with a clear error before creating an order
+        Payment payment = newPayment(user, txnRef, orderInfo, premiumPriceVnd, "VND", PaymentProvider.VNPAY);
         paymentRepository.save(payment);
 
         String paymentUrl = vnPayService.buildPaymentUrl(txnRef, premiumPriceVnd, orderInfo, clientIp);
-        log.info("Created premium checkout for user {} (txnRef {}, {} VND)",
+        log.info("Created VNPAY premium checkout for user {} (txnRef {}, {} VND)",
                 user.userId(), txnRef, premiumPriceVnd);
-
         return CheckoutResponse.builder()
-                .paymentUrl(paymentUrl)
+                .provider("VNPAY").paymentUrl(paymentUrl).txnRef(txnRef)
+                .amount(premiumPriceVnd).currency("VND").build();
+    }
+
+    private CheckoutResponse checkoutStripe(AuthPrincipal user, String txnRef, String orderInfo) {
+        // Create the Stripe session first (throws if misconfigured) so we never persist an orphan order.
+        Session session = stripeService.createCheckoutSession(txnRef, orderInfo);
+        long amount = stripeService.getPriceCents();
+        String currency = stripeService.getCurrency().toUpperCase();
+
+        Payment payment = newPayment(user, txnRef, orderInfo, amount, currency, PaymentProvider.STRIPE);
+        payment.setBankTxnNo(session.getId()); // Stripe Checkout Session id, for traceability
+        paymentRepository.save(payment);
+
+        log.info("Created STRIPE premium checkout for user {} (txnRef {}, session {})",
+                user.userId(), txnRef, session.getId());
+        return CheckoutResponse.builder()
+                .provider("STRIPE").paymentUrl(session.getUrl()).txnRef(txnRef)
+                .amount(amount).currency(currency).build();
+    }
+
+    private Payment newPayment(AuthPrincipal user, String txnRef, String orderInfo,
+            long amount, String currency, PaymentProvider provider) {
+        return Payment.builder()
+                .userId(user.userId())
+                .username(user.username())
+                .amount(amount)
+                .currency(currency)
+                .status(PaymentStatus.PENDING)
+                .provider(provider.name())
                 .txnRef(txnRef)
-                .amount(premiumPriceVnd)
-                .currency("VND")
+                .orderInfo(orderInfo)
+                .durationDays(premiumDurationDays)
                 .build();
     }
 
     @Override
     @Transactional
-    public VnpConfirmResult confirmVnpay(Map<String, String> params) {
+    public PaymentConfirmResult confirmVnpay(Map<String, String> params) {
         String txnRef = params.get("vnp_TxnRef");
 
         if (!vnPayService.isValidSignature(params)) {
             log.warn("VNPay callback with invalid signature (txnRef {})", txnRef);
-            return new VnpConfirmResult(VnpConfirmResult.Outcome.INVALID_SIGNATURE, txnRef);
+            return new PaymentConfirmResult(PaymentConfirmResult.Outcome.INVALID_SIGNATURE, txnRef);
         }
 
         Payment payment = paymentRepository.findByTxnRef(txnRef).orElse(null);
         if (payment == null) {
-            return new VnpConfirmResult(VnpConfirmResult.Outcome.NOT_FOUND, txnRef);
+            return new PaymentConfirmResult(PaymentConfirmResult.Outcome.NOT_FOUND, txnRef);
         }
-        // Return URL and IPN can both fire — finalize only once.
         if (payment.getStatus() == PaymentStatus.PAID) {
-            return new VnpConfirmResult(VnpConfirmResult.Outcome.ALREADY_CONFIRMED, txnRef);
+            return new PaymentConfirmResult(PaymentConfirmResult.Outcome.ALREADY_CONFIRMED, txnRef);
         }
 
         boolean success = "00".equals(params.get("vnp_ResponseCode"))
                 && "00".equals(params.get("vnp_TransactionStatus"));
         if (!success) {
-            payment.setStatus(PaymentStatus.FAILED);
-            paymentRepository.save(payment);
-            log.info("Payment {} FAILED (responseCode {})", txnRef, params.get("vnp_ResponseCode"));
-            return new VnpConfirmResult(VnpConfirmResult.Outcome.PAYMENT_FAILED, txnRef);
+            return markFailed(payment, txnRef, "responseCode " + params.get("vnp_ResponseCode"));
+        }
+        return markPaid(payment, txnRef, params.get("vnp_TransactionNo"));
+    }
+
+    @Override
+    @Transactional
+    public PaymentConfirmResult confirmStripe(String sessionId) {
+        Session session;
+        try {
+            session = stripeService.retrieveSession(sessionId);
+        } catch (Exception ex) {
+            log.warn("Could not retrieve Stripe session {}", sessionId, ex);
+            return new PaymentConfirmResult(PaymentConfirmResult.Outcome.PAYMENT_FAILED, null);
         }
 
+        String txnRef = session.getClientReferenceId();
+        Payment payment = txnRef == null ? null : paymentRepository.findByTxnRef(txnRef).orElse(null);
+        if (payment == null) {
+            return new PaymentConfirmResult(PaymentConfirmResult.Outcome.NOT_FOUND, txnRef);
+        }
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            return new PaymentConfirmResult(PaymentConfirmResult.Outcome.ALREADY_CONFIRMED, txnRef);
+        }
+
+        if (!"paid".equals(session.getPaymentStatus())) {
+            return markFailed(payment, txnRef, "stripe payment_status " + session.getPaymentStatus());
+        }
+        return markPaid(payment, txnRef, session.getPaymentIntent());
+    }
+
+    private PaymentConfirmResult markPaid(Payment payment, String txnRef, String providerTxnNo) {
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());
-        payment.setBankTxnNo(params.get("vnp_TransactionNo"));
+        payment.setBankTxnNo(providerTxnNo);
         paymentRepository.save(payment);
         log.info("Payment {} PAID — granting premium to user {}", txnRef, payment.getUserId());
 
         premiumUpgradePublisher.publish(payment.getUserId(), payment.getDurationDays(), txnRef);
-        return new VnpConfirmResult(VnpConfirmResult.Outcome.SUCCESS, txnRef);
+        return new PaymentConfirmResult(PaymentConfirmResult.Outcome.SUCCESS, txnRef);
+    }
+
+    private PaymentConfirmResult markFailed(Payment payment, String txnRef, String reason) {
+        payment.setStatus(PaymentStatus.FAILED);
+        paymentRepository.save(payment);
+        log.info("Payment {} FAILED ({})", txnRef, reason);
+        return new PaymentConfirmResult(PaymentConfirmResult.Outcome.PAYMENT_FAILED, txnRef);
     }
 
     @Override

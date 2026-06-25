@@ -148,6 +148,11 @@ services:
       VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
       VNP_PAY_URL: ${VNP_PAY_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
       VNP_RETURN_URL: ${VNP_RETURN_URL:-http://localhost:8080/api/payments/vnpay-return}
+      # Stripe (test mode) — get a secret key from https://dashboard.stripe.com/test/apikeys
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_RETURN_URL: ${STRIPE_RETURN_URL:-http://localhost:8080/api/payments/stripe-return}
+      STRIPE_PRICE_CENTS: ${STRIPE_PRICE_CENTS:-200}
+      STRIPE_CURRENCY: ${STRIPE_CURRENCY:-usd}
       PAYMENT_RESULT_URL: ${PAYMENT_RESULT_URL:-http://localhost:3000/payment-result}
     depends_on:
       payment-db: { condition: service_healthy }

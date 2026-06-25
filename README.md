@@ -37,7 +37,7 @@ flowchart TB
     REDIS[("Redis")]
     CLOUD["Cloudinary"]
     MAIL["SMTP / MailHog"]
-    VNPAY["VNPay"]
+    VNPAY["VNPay / Stripe"]
 
     Client --> GW
     GW --> AUTH & SONG & USER & SEARCH & MEDIA & PAYMENT
@@ -262,8 +262,9 @@ docker compose up -d --build
 - **TLS / domain**: put Caddy or nginx in front of `:8080` (Caddy gives auto-HTTPS in ~3 lines), then
   also allow `80/443` in the firewall.
 - **Email**: set `SMTP_HOST/PORT/USER/PASS` (e.g. Gmail/SendGrid) so reset-password mail is delivered.
-- **Payments**: set the `VNP_*` keys from a [VNPay sandbox](https://sandbox.vnpayment.vn) merchant, and
-  point `VNP_RETURN_URL` / `PAYMENT_RESULT_URL` at URLs reachable from the user's browser.
+- **Payments**: VNPay needs `VNP_*` keys from a [VNPay sandbox](https://sandbox.vnpayment.vn) merchant;
+  Stripe just needs a test `STRIPE_SECRET_KEY` ([dashboard](https://dashboard.stripe.com/test/apikeys),
+  no approval). Point the `*_RETURN_URL` / `PAYMENT_RESULT_URL` at URLs reachable from the user's browser.
 - If you seeded songs, populate search once:
   `curl -X POST http://localhost:8082/internal/songs/reindex` (run it on the VPS).
 
@@ -310,7 +311,7 @@ Full API contract for the frontend: **Swagger UI** (link above) — complete req
 ### Premium (subscription)
 
 Orthogonal to roles — any account can buy **Premium** (30 days) to play `premium_only` songs.
-`POST /api/payments/checkout` returns a signed **VNPay** URL; on a verified callback payment-service
-publishes a `premium-upgrade` event, user-service sets `premium_until`, and song-service then allows
-premium-only playback (premium checked via Feign; `ADMIN` bypasses the gate, while non-premium users
-get `1305 SONG_PREMIUM_REQUIRED` on `play`).
+`POST /api/payments/checkout?provider=vnpay|stripe` returns a hosted-payment-page URL (**VNPay** or
+**Stripe Checkout**); on a verified callback payment-service publishes a `premium-upgrade` event,
+user-service sets `premium_until`, and song-service then allows premium-only playback (premium checked
+via Feign; `ADMIN` bypasses the gate, while non-premium users get `1305 SONG_PREMIUM_REQUIRED` on `play`).

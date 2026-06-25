@@ -40,6 +40,16 @@ vnpay:
   order-type: other
   locale: ${VNP_LOCALE:vn}
 
-# Where this service 302-redirects the browser after verifying the VNPay return (FE result page).
+# Stripe Checkout (alternative to VNPay). Test mode: get a secret key (sk_test_...) from
+# https://dashboard.stripe.com/test/apikeys — no merchant approval needed.
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  # BE endpoint Stripe redirects the browser back to (must reach this service via the gateway).
+  return-url: ${STRIPE_RETURN_URL:http://localhost:8080/api/payments/stripe-return}
+  price-cents: ${STRIPE_PRICE_CENTS:200}     # 200 = $2.00
+  currency: ${STRIPE_CURRENCY:usd}
+  product-name: ${STRIPE_PRODUCT_NAME:SoundClown Premium (30 days)}
+
+# Where this service 302-redirects the browser after verifying a return (FE result page).
 payment:
   result-url: ${PAYMENT_RESULT_URL:http://localhost:3000/payment-result}
