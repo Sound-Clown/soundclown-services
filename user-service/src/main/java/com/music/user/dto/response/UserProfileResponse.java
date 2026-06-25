@@ -14,5 +14,7 @@ public class UserProfileResponse {
     private String email;
     private Role role;
     private boolean active;
+    private boolean premium;          // derived: premiumUntil is in the future
+    private LocalDateTime premiumUntil;
     private LocalDateTime createdAt;
 }
