@@ -22,5 +22,6 @@ public class SongResponse {
     private int playCount;
     private int likeCount;
     private boolean liked;
+    private boolean premiumOnly;
     private LocalDateTime createdAt;
 }

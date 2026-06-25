@@ -6,18 +6,23 @@ import com.music.common.exception.ErrorCode;
 import com.music.common.security.CurrentUserProvider;
 import com.music.user.client.AuthLockClient;
 import com.music.user.dto.request.UpsertProfileRequest;
+import com.music.user.dto.response.PremiumStatusResponse;
 import com.music.user.dto.response.UserProfileResponse;
 import com.music.user.entity.UserProfile;
 import com.music.user.mapper.UserProfileMapper;
 import com.music.user.repository.UserProfileRepository;
 import com.music.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -59,6 +64,35 @@ public class UserServiceImpl implements UserService {
         profile.setActive(newActive);
         userProfileRepository.save(profile);
         return userProfileMapper.toResponse(profile);
+    }
+
+    @Override
+    public void activatePremium(Long userId, int durationDays) {
+        UserProfile profile = userProfileRepository.findById(userId).orElse(null);
+        if (profile == null) {
+            // Profile should exist (synced at register); log and skip rather than fail the event.
+            log.warn("activatePremium: no profile for user {} — skipping", userId);
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        // Stack on remaining premium if still active, otherwise start from now.
+        LocalDateTime base = (profile.getPremiumUntil() != null && profile.getPremiumUntil().isAfter(now))
+                ? profile.getPremiumUntil()
+                : now;
+        profile.setPremiumUntil(base.plusDays(durationDays));
+        userProfileRepository.save(profile);
+        log.info("Premium activated for user {} until {}", userId, profile.getPremiumUntil());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PremiumStatusResponse getPremiumStatus(Long id) {
+        LocalDateTime premiumUntil = load(id).getPremiumUntil();
+        boolean premium = premiumUntil != null && premiumUntil.isAfter(LocalDateTime.now());
+        return PremiumStatusResponse.builder()
+                .premium(premium)
+                .premiumUntil(premiumUntil)
+                .build();
     }
 
     @Override

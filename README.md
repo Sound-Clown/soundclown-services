@@ -26,30 +26,38 @@ flowchart TB
         SEARCH["search-service :8084"]
         MEDIA["media-service :8085"]
         NOTIF["notification-service :8086"]
+        PAYMENT["payment-service :8087"]
     end
 
     AUTHDB[("auth_db<br/>MySQL")]
     SONGDB[("song_db<br/>MySQL")]
     USERDB[("user_db<br/>MySQL")]
+    PAYMENTDB[("payment_db<br/>MySQL")]
     ES[("Elasticsearch")]
     REDIS[("Redis")]
     CLOUD["Cloudinary"]
     MAIL["SMTP / MailHog"]
+    STRIPE["Stripe"]
 
     Client --> GW
-    GW --> AUTH & SONG & USER & SEARCH & MEDIA
+    GW --> AUTH & SONG & USER & SEARCH & MEDIA & PAYMENT
 
     AUTH --- AUTHDB
     SONG --- SONGDB
     USER --- USERDB
+    PAYMENT --- PAYMENTDB
     SEARCH --- ES
     MEDIA -. upload .-> CLOUD
+    PAYMENT -. "checkout / verify" .-> STRIPE
 
     AUTH -- "Feign: sync profile" --> USER
     USER -- "Feign: lock account" --> AUTH
     SONG -- "Feign: index song" --> SEARCH
+    SONG -- "Feign: check premium" --> USER
     AUTH -- "publish event" --> REDIS
+    PAYMENT -- "publish premium-upgrade" --> REDIS
     REDIS -- "subscribe" --> NOTIF
+    REDIS -- "subscribe premium" --> USER
     NOTIF -. "send email" .-> MAIL
 ```
 
@@ -70,6 +78,7 @@ infrastructure. Every service validates the JWT itself (defense in depth) and ex
 | **search-service**       | 8084 | Full-text (fuzzy) song search                            | Elasticsearch        |
 | **media-service**        | 8085 | Upload audio/images to Cloudinary                        | — (stateless)        |
 | **notification-service** | 8086 | Send reset-password email (async)                        | — (Redis subscriber) |
+| **payment-service**      | 8087 | Premium subscription checkout via Stripe                 | MySQL `payment_db`   |
 | **common**               | —    | Shared library: `ApiResponse`, `ErrorCode`, JWT, OpenAPI | —                    |
 
 ---
@@ -128,6 +137,7 @@ erDiagram
         varchar reject_reason
         int play_count
         int like_count
+        boolean premium_only "Premium-only playback"
         datetime created_at
         datetime updated_at
     }
@@ -148,7 +158,29 @@ erDiagram
         varchar email
         enum role "LISTENER|ARTIST|ADMIN"
         boolean is_active
+        datetime premium_until "Premium active until (null = free)"
         datetime created_at
+    }
+```
+
+### `payment_db` — payment-service
+
+```mermaid
+erDiagram
+    payments {
+        bigint id PK
+        bigint user_id "soft to auth.users"
+        varchar username
+        bigint amount "VND"
+        varchar currency
+        varchar status "PENDING|PAID|FAILED|CANCELLED"
+        varchar provider "STRIPE"
+        varchar txn_ref UK "our order ref"
+        varchar bank_txn_no "Stripe session / payment-intent id"
+        varchar order_info
+        int duration_days
+        datetime created_at
+        datetime paid_at
     }
 ```
 
@@ -180,18 +212,17 @@ erDiagram
 Requires **Docker** + Docker Compose.
 
 ```bash
-cp .env.example .env        # set JWT_SECRET (and Cloudinary if you want to test uploads)
+cp .env.example .env        # set JWT_SECRET (+ Cloudinary for uploads, Stripe key for payments)
 docker compose up --build   # build and run the whole system
 ```
 
-| Component              | URL                                       |
-| ---------------------- | ----------------------------------------- |
-| API Gateway            | http://localhost:8080                     |
-| Swagger UI (API docs)  | http://localhost:8080/swagger-ui.html     |
-| Zipkin (tracing)       | http://localhost:9411                     |
-| Prometheus (metrics)   | http://localhost:9090                     |
-| Grafana (dashboards)   | http://localhost:3001 - `admin` / `admin` |
-| MailHog (reset emails) | http://localhost:8025                     |
+| Component             | URL                                       |
+| --------------------- | ----------------------------------------- |
+| API Gateway           | http://localhost:8080                     |
+| Swagger UI (API docs) | http://localhost:8080/swagger-ui.html     |
+| Zipkin (tracing)      | http://localhost:9411                     |
+| Prometheus (metrics)  | http://localhost:9090                     |
+| Grafana (dashboards)  | http://localhost:3001 - `admin` / `admin` |
 
 Stop: `docker compose down` (add `-v` to also drop the data volumes).
 
@@ -230,7 +261,10 @@ docker compose up -d --build
 
 - **TLS / domain**: put Caddy or nginx in front of `:8080` (Caddy gives auto-HTTPS in ~3 lines), then
   also allow `80/443` in the firewall.
-- **Email**: MailHog is a dev catcher — point `SMTP_HOST/PORT` at a real SMTP for production mail.
+- **Email**: set `SMTP_HOST/PORT/USER/PASS` (e.g. Gmail/SendGrid) so reset-password mail is delivered.
+- **Payments**: set a test `STRIPE_SECRET_KEY` ([dashboard](https://dashboard.stripe.com/test/apikeys),
+  no approval needed). Point `STRIPE_RETURN_URL` / `PAYMENT_RESULT_URL` at URLs reachable from the
+  user's browser; test with card `4242 4242 4242 4242`.
 - If you seeded songs, populate search once:
   `curl -X POST http://localhost:8082/internal/songs/reindex` (run it on the VPS).
 
@@ -273,3 +307,11 @@ Full API contract for the frontend: **Swagger UI** (link above) — complete req
 | `LISTENER` | Listen, like                                                 |
 | `ARTIST`   | Upload songs, manage albums (+ everything a LISTENER can do) |
 | `ADMIN`    | Review/approve songs, lock/unlock users                      |
+
+### Premium (subscription)
+
+Orthogonal to roles — any account can buy **Premium** (30 days) to play `premium_only` songs.
+`POST /api/payments/checkout` returns a **Stripe Checkout** URL; on the return payment-service confirms
+the session and publishes a `premium-upgrade` event, user-service sets `premium_until`, and song-service
+then allows premium-only playback (premium checked via Feign; `ADMIN` bypasses the gate, while
+non-premium users get `1305 SONG_PREMIUM_REQUIRED` on `play`).

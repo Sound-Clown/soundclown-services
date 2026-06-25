@@ -71,6 +71,11 @@ public class Song {
     @Builder.Default
     private int likeCount = 0;
 
+    // Premium-only songs can only be played by users with an active premium subscription.
+    @Column(name = "premium_only", nullable = false)
+    @Builder.Default
+    private boolean premiumOnly = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -31,6 +31,7 @@ public enum ErrorCode {
     SONG_NOT_FOUND(1301, "Không tìm thấy bài hát", HttpStatus.NOT_FOUND),
     SONG_NOT_OWNED(1303, "Bạn không có quyền thao tác bài hát này", HttpStatus.FORBIDDEN),
     SONG_NOT_APPROVED(1304, "Bài hát chưa được duyệt", HttpStatus.FORBIDDEN),
+    SONG_PREMIUM_REQUIRED(1305, "Bài hát này chỉ dành cho tài khoản Premium", HttpStatus.FORBIDDEN),
     SONG_TITLE_BLANK(1310, "Tên bài hát không được để trống", HttpStatus.BAD_REQUEST),
     SONG_AUDIO_REQUIRED(1311, "File audio là bắt buộc", HttpStatus.BAD_REQUEST),
 
@@ -43,6 +44,10 @@ public enum ErrorCode {
     INVALID_FILE_TYPE(1601, "Định dạng file không hợp lệ", HttpStatus.BAD_REQUEST),
     FILE_TOO_LARGE(1602, "File quá dung lượng cho phép", HttpStatus.BAD_REQUEST),
     UPLOAD_FAILED(1603, "Tải file lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // Payment 1701-1800
+    PAYMENT_NOT_FOUND(1701, "Không tìm thấy giao dịch", HttpStatus.NOT_FOUND),
+    PAYMENT_NOT_CONFIGURED(1704, "Cổng thanh toán chưa được cấu hình", HttpStatus.SERVICE_UNAVAILABLE),
 
     // Validation / request 1900-1999
     VALIDATION_ERROR(1900, "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),

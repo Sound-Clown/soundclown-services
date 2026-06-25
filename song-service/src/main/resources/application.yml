@@ -21,3 +21,6 @@ jwt:
 
 search-service:
   url: ${SEARCH_SERVICE_URL:http://localhost:8084}
+
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8083}

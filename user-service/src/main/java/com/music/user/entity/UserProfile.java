@@ -45,6 +45,11 @@ public class UserProfile {
     @Builder.Default
     private boolean active = true;
 
+    // Premium active until this instant (null = never premium / free). Set by the
+    // premium-upgrade event from payment-service.
+    @Column(name = "premium_until")
+    private LocalDateTime premiumUntil;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

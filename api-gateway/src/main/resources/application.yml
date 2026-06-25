@@ -51,6 +51,11 @@ spring:
           predicates:
             - Path=/api/search/**
 
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/payments/**
+
         # Aggregate each service's OpenAPI spec under the gateway's Swagger UI.
         - id: auth-docs
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
@@ -82,6 +87,12 @@ spring:
             - Path=/v3/api-docs/search
           filters:
             - RewritePath=/v3/api-docs/search, /v3/api-docs
+        - id: payment-docs
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/v3/api-docs/payment
+          filters:
+            - RewritePath=/v3/api-docs/payment, /v3/api-docs
 
 springdoc:
   swagger-ui:
@@ -97,6 +108,8 @@ springdoc:
         url: /v3/api-docs/media
       - name: search-service
         url: /v3/api-docs/search
+      - name: payment-service
+        url: /v3/api-docs/payment
 
 management:
   endpoints:
